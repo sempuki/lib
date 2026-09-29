@@ -31,14 +31,14 @@ through `COPTS` in `bazel/copts.bzl`. Put machine-local flags in an untracked
 Add lib as a git submodule and point Bazel at it:
 
 ```sh
-git submodule add git@github.com:sempuki/lib.git third_party/lib
-echo third_party/lib >> .bazelignore
+git submodule add git@github.com:sempuki/lib.git 2nd_party/lib
+echo 2nd_party/lib >> .bazelignore
 ```
 
 ```starlark
 # MODULE.bazel
 bazel_dep(name = "lib")
-local_path_override(module_name = "lib", path = "third_party/lib")
+local_path_override(module_name = "lib", path = "2nd_party/lib")
 ```
 
 Then `#include "base/core.hpp"`, depend on `@lib//base:core`, and give each
