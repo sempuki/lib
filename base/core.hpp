@@ -6,6 +6,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <format>
 #include <functional>
@@ -72,8 +73,11 @@
 #define DECLARE_USED(expression__) ((void)(sizeof(expression__)))
 #define DECLARE_UNUSED(expression__) ((void)(sizeof(expression__)))
 
+// The empty then-branch closes the `if`, so a trailing `else` at the call site
+// binds to the caller's `if` instead of this one.
 #define CHECK_CONTRACT__(condition__, kind__)                        \
-  if (!(condition__)) [[unlikely]] {                                 \
+  if (condition__) {                                                 \
+  } else [[unlikely]] {                                              \
     const auto current_location__ = std::source_location::current(); \
     throw std::logic_error(std::format(                              \
         "[{}] {} Failed {}: {}", current_location__.file_name(),     \
@@ -242,11 +246,12 @@ struct Empty final {};
 
 #if defined(__GNUC__)  // Clang also supports this header.
 inline std::string demangle(const std::string& name) {
-  char buffer[1024];  // Avoid realloc() within demangle.
-  size_t inout_size = std::size(buffer);
+  // Let __cxa_demangle allocate, since it may realloc() any buffer it is given.
   int out_status = 0;
-  abi::__cxa_demangle(name.c_str(), buffer, &inout_size, &out_status);
-  return out_status ? name : buffer;
+  std::unique_ptr<char, decltype(&std::free)> demangled{
+      abi::__cxa_demangle(name.c_str(), nullptr, nullptr, &out_status),
+      &std::free};
+  return (out_status == 0 && demangled) ? std::string{demangled.get()} : name;
 }
 #else
 inline std::string demangle(const std::string& name) { return name; }

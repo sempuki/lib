@@ -7,43 +7,52 @@
 namespace lib {
 
 TEST_CASE("Contracts") {
-  SECTION("ShouldThrowOnPreconditionFailure") {
+  SECTION("ShouldThrowPreconditionErrorGivenFalseExpect") {
     REQUIRE_THROWS_AS(EXPECT(false), contract::PreconditionError);
   }
-  SECTION("ShouldThrowOnPostconditionFailure") {
+  SECTION("ShouldThrowPostconditionErrorGivenFalseEnsure") {
     REQUIRE_THROWS_AS(ENSURE(false), contract::PostconditionError);
   }
-  SECTION("ShouldThrowOnInvariantFailure") {
+  SECTION("ShouldThrowInvariantErrorGivenFalseAssert") {
     REQUIRE_THROWS_AS(ASSERT(false), contract::InvariantError);
   }
-  SECTION("ShouldHaveSourceLocationOnPreconditionFailure") {
+  SECTION("ShouldHaveSourceLocationGivenFalseExpect") {
+    bool thrown = false;
     try {
       EXPECT(false);
     } catch (const contract::PreconditionError& e) {
+      thrown = true;
       CHECK(static_cast<std::string>(e.origin.file_name()).size());
     }
+    REQUIRE(thrown);
   }
-  SECTION("ShouldHaveSourceLocationOnPostconditionFailure") {
+  SECTION("ShouldHaveSourceLocationGivenFalseEnsure") {
+    bool thrown = false;
     try {
-      EXPECT(false);
-    } catch (const contract::PreconditionError& e) {
+      ENSURE(false);
+    } catch (const contract::PostconditionError& e) {
+      thrown = true;
       CHECK(static_cast<std::string>(e.origin.file_name()).size());
     }
+    REQUIRE(thrown);
   }
-  SECTION("ShouldHaveSourceLocationOnInvariantFailure") {
+  SECTION("ShouldHaveSourceLocationGivenFalseAssert") {
+    bool thrown = false;
     try {
-      EXPECT(false);
-    } catch (const contract::PreconditionError& e) {
+      ASSERT(false);
+    } catch (const contract::InvariantError& e) {
+      thrown = true;
       CHECK(static_cast<std::string>(e.origin.file_name()).size());
     }
+    REQUIRE(thrown);
   }
-  SECTION("ShouldNotThrowOnPreconditionSuccess") {
+  SECTION("ShouldNotThrowGivenTrueExpect") {
     REQUIRE_NOTHROW(EXPECT(true));
   }
-  SECTION("ShouldNotThrowOnPostconditionSuccess") {
+  SECTION("ShouldNotThrowGivenTrueEnsure") {
     REQUIRE_NOTHROW(ENSURE(true));
   }
-  SECTION("ShouldNotThrowOnInvariantSuccess") {
+  SECTION("ShouldNotThrowGivenTrueAssert") {
     REQUIRE_NOTHROW(ASSERT(true));
   }
 }

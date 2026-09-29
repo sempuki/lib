@@ -268,7 +268,8 @@ class StatusKind final {
   constexpr ~StatusKind() = default;
 
   constexpr std::string_view message() const noexcept {
-    return domain_->status_kind_message_of(this);
+    return domain_ ? domain_->status_kind_message_of(this)
+                   : std::string_view{};
   }
 
   constexpr bool operator==(StatusKind that) const noexcept {
@@ -645,6 +646,11 @@ class EnumStatusDomain
       public StatusDomainInterface,
       public EnumStatusKindConditionMixin<ConditionEnumType, ConditionCount>,
       public EnumStatusIncidentMixin<ConditionEnumType, IncidentCountMax> {
+  // StatusCode stores condition and incident codes in 16 bits each.
+  static_assert(ConditionCount <= (std::size_t{1} << 16));
+  static_assert(IncidentCountMax > 0 &&
+                IncidentCountMax <= (std::size_t{1} << 16));
+
  public:
   using StatusDomainBuilderBase::StatusDomainBuilderBase;
 
@@ -695,8 +701,9 @@ template <typename ConditionEnumType,  //
 EnumStatusDomain<ConditionEnumType, ConditionCount, IncidentCountMax> &
 static_enum_status_domain() noexcept {
   static std::size_t domain_code = allocate_static_increment();
-  static EnumStatusDomain<ConditionEnumType, ConditionCount> domain{
-      domain_code, std::format("static_enum_status_domain_{}", domain_code)};
+  static EnumStatusDomain<ConditionEnumType, ConditionCount, IncidentCountMax>
+      domain{domain_code,
+             std::format("static_enum_status_domain_{}", domain_code)};
   return domain;
 }
 

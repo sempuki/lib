@@ -625,4 +625,26 @@ TEST_CASE("ThreadLocalEnumStatusDomain") {
   }
 }
 
+TEST_CASE("StaticEnumStatusDomainIncidentCount") {
+  SECTION("ShouldRaiseStatusGivenNonDefaultIncidentCountMax") {
+    // Under Test.
+    auto& small = static_enum_status_domain<Quark, QUARK_CONDITION_COUNT, 4>();
+    Status status = small.raise_status(Quark::CHARM, message0);
+
+    // Postconditions.
+    REQUIRE(status.message() == message0);
+    REQUIRE(status.kind().message() == "CHARM");
+  }
+}
+
+TEST_CASE("StatusKindDefault") {
+  SECTION("ShouldHaveEmptyMessageGivenDefaultConstruction") {
+    // Under Test.
+    StatusKind kind;
+
+    // Postconditions.
+    REQUIRE(kind.message().empty());
+  }
+}
+
 }  // namespace lib

@@ -25,6 +25,17 @@ cc_library(
     copts = COPTS,
 )
 
+cc_test(
+    name = "core_test",
+    size = "small",
+    srcs = ["core_test.cpp"],
+    copts = COPTS,
+    deps = [
+        ":core",
+        ":testing",
+    ],
+)
+
 cc_library(
     name = "contract",
     hdrs = ["contract.hpp"],
