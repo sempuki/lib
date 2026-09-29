@@ -18,19 +18,21 @@ _MSVC = [
 ]
 
 # C++26 is still spelled c++2c by some shipping compilers (Apple Clang).
-_GNU = ["-std=c++2c", "-Wall", "-Wextra"]
+_GNU = [
+    "-std=c++2c",
+    "-Wall",
+    "-Wextra",
+    # Partial designated initializers (`.sType = ...`) are the idiomatic way to
+    # fill C API structs; both compilers flag them under -Wextra.
+    "-Wno-missing-field-initializers",
+]
 
 COPTS = select({
     "@rules_cc//cc/compiler:msvc-cl": _MSVC,
     "@rules_cc//cc/compiler:clang-cl": _MSVC,
     # Contract checks throw from noexcept functions by design: the throw is the
     # terminate, and -Wterminate (GCC) / -Wexceptions (Clang) flag every one.
-    # GCC also flags partial designated initializers (`.sType = ...`), which
-    # are the idiomatic way to fill C API structs.
-    "@rules_cc//cc/compiler:gcc": _GNU + [
-        "-Wno-terminate",
-        "-Wno-missing-field-initializers",
-    ],
+    "@rules_cc//cc/compiler:gcc": _GNU + ["-Wno-terminate"],
     "@rules_cc//cc/compiler:clang": _GNU + ["-Wno-exceptions"],
     "//conditions:default": _GNU,
 })
