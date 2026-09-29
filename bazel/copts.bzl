@@ -25,7 +25,12 @@ COPTS = select({
     "@rules_cc//cc/compiler:clang-cl": _MSVC,
     # Contract checks throw from noexcept functions by design: the throw is the
     # terminate, and -Wterminate (GCC) / -Wexceptions (Clang) flag every one.
-    "@rules_cc//cc/compiler:gcc": _GNU + ["-Wno-terminate"],
+    # GCC also flags partial designated initializers (`.sType = ...`), which
+    # are the idiomatic way to fill C API structs.
+    "@rules_cc//cc/compiler:gcc": _GNU + [
+        "-Wno-terminate",
+        "-Wno-missing-field-initializers",
+    ],
     "@rules_cc//cc/compiler:clang": _GNU + ["-Wno-exceptions"],
     "//conditions:default": _GNU,
 })
