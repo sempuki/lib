@@ -22,8 +22,9 @@ bazel test //...
 bazel test //... --repo_env=CC=clang   # or pick a compiler explicitly
 ```
 
-The language standard is C++26 (`/std:c++latest` on MSVC), set per-platform in
-`.bazelrc`. Put machine-local flags in an untracked `user.bazelrc`.
+The language standard is C++26 (`/std:c++latest` on MSVC), applied per target
+through `COPTS` in `bazel/copts.bzl`. Put machine-local flags in an untracked
+`user.bazelrc`.
 
 ## Using from another repo
 
@@ -40,6 +41,6 @@ bazel_dep(name = "lib")
 local_path_override(module_name = "lib", path = "third_party/lib")
 ```
 
-Then `#include "base/core.hpp"` and depend on `@lib//base:core`. Consumers must
-build with at least the std flags in this repo's `.bazelrc`; shared warning
-flags are available via `load("@lib//bazel:copts.bzl", "COPTS")`.
+Then `#include "base/core.hpp"`, depend on `@lib//base:core`, and give each
+first-party target `copts = COPTS` from `load("@lib//bazel:copts.bzl", "COPTS")`
+so it builds with the same standard and warnings as lib.
