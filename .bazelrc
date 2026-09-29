@@ -1,0 +1,15 @@
+# Copyright 2022 -- CONTRIBUTORS. See LICENSE.
+#
+# Consumers of @lib must build with at least C++26; mirror the std flags below.
+
+common --enable_platform_specific_config
+
+build:linux   --cxxopt=-std=c++26 --host_cxxopt=-std=c++26
+build:macos   --cxxopt=-std=c++2c --host_cxxopt=-std=c++2c
+build:windows --cxxopt=/std:c++latest --host_cxxopt=/std:c++latest
+build:windows --cxxopt=/Zc:__cplusplus --cxxopt=/Zc:preprocessor --cxxopt=/utf-8
+
+test --test_output=errors
+
+# Machine-local overrides (jobs, caches, sanitizers) belong here, untracked.
+try-import %workspace%/user.bazelrc
