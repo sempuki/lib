@@ -15,18 +15,21 @@ TEST_CASE("NarrowCast") {
   SECTION("ShouldReturnSameValueGivenValueInRange") {
     REQUIRE(narrow_cast<std::int8_t>(127) == 127);
     REQUIRE(narrow_cast<std::int8_t>(-128) == -128);
-    REQUIRE(narrow_cast<std::uint32_t>(std::int64_t{0xFFFFFFFF}) == 0xFFFFFFFFu);
+    REQUIRE(narrow_cast<std::uint32_t>(std::int64_t{0xFFFFFFFF}) ==
+            0xFFFFFFFFu);
   }
 
   SECTION("ShouldThrowGivenOverflow") {
     REQUIRE_THROWS_AS(narrow_cast<std::int8_t>(128), std::logic_error);
-    REQUIRE_THROWS_AS(narrow_cast<std::int32_t>(std::int64_t{1} << 32), std::logic_error);
+    REQUIRE_THROWS_AS(narrow_cast<std::int32_t>(std::int64_t{1} << 32),
+                      std::logic_error);
   }
 
   SECTION("ShouldThrowGivenSignChange") {
     REQUIRE_THROWS_AS(narrow_cast<std::uint32_t>(-1), std::logic_error);
-    REQUIRE_THROWS_AS(narrow_cast<std::int32_t>(std::numeric_limits<std::uint32_t>::max()),
-                      std::logic_error);
+    REQUIRE_THROWS_AS(
+        narrow_cast<std::int32_t>(std::numeric_limits<std::uint32_t>::max()),
+        std::logic_error);
   }
 }
 
@@ -78,46 +81,14 @@ TEST_CASE("Demangle") {
   }
 
   SECTION("ShouldReturnFullNameGivenNameLongerThan1024Chars") {
-    using Long = std::tuple<Deep<0>,
-                            Deep<1>,
-                            Deep<2>,
-                            Deep<3>,
-                            Deep<4>,
-                            Deep<5>,
-                            Deep<6>,
-                            Deep<7>,
-                            Deep<8>,
-                            Deep<9>,
-                            Deep<10>,
-                            Deep<11>,
-                            Deep<12>,
-                            Deep<13>,
-                            Deep<14>,
-                            Deep<15>,
-                            Deep<16>,
-                            Deep<17>,
-                            Deep<18>,
-                            Deep<19>,
-                            Deep<20>,
-                            Deep<21>,
-                            Deep<22>,
-                            Deep<23>,
-                            Deep<24>,
-                            Deep<25>,
-                            Deep<26>,
-                            Deep<27>,
-                            Deep<28>,
-                            Deep<29>,
-                            Deep<30>,
-                            Deep<31>,
-                            Deep<32>,
-                            Deep<33>,
-                            Deep<34>,
-                            Deep<35>,
-                            Deep<36>,
-                            Deep<37>,
-                            Deep<38>,
-                            Deep<39>>;
+    using Long =
+        std::tuple<Deep<0>, Deep<1>, Deep<2>, Deep<3>, Deep<4>, Deep<5>,
+                   Deep<6>, Deep<7>, Deep<8>, Deep<9>, Deep<10>, Deep<11>,
+                   Deep<12>, Deep<13>, Deep<14>, Deep<15>, Deep<16>, Deep<17>,
+                   Deep<18>, Deep<19>, Deep<20>, Deep<21>, Deep<22>, Deep<23>,
+                   Deep<24>, Deep<25>, Deep<26>, Deep<27>, Deep<28>, Deep<29>,
+                   Deep<30>, Deep<31>, Deep<32>, Deep<33>, Deep<34>, Deep<35>,
+                   Deep<36>, Deep<37>, Deep<38>, Deep<39>>;
     const std::string name = to_type_string<std::tuple<Long, Long>>();
     REQUIRE(name.size() > 1024u);
     REQUIRE(name.starts_with("std::tuple<std::tuple<lib::Deep<0>"));

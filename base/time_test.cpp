@@ -15,7 +15,8 @@ TEST_CASE("SimClock") {
 
 TEST_CASE("Duration") {
   SECTION("IsChronoDurationFractionsOfSecond") {
-    REQUIRE(std::is_same_v<Duration, std::chrono::duration<double, std::ratio<1>>>);
+    REQUIRE(
+        std::is_same_v<Duration, std::chrono::duration<double, std::ratio<1>>>);
   }
 
   SECTION("ShouldConvertToAndFromDouble") {
@@ -24,7 +25,8 @@ TEST_CASE("Duration") {
   }
 
   SECTION("ShouldBeZeroWhenValueInitialized") {
-    // Like any chrono::duration, a default-initialized Duration is indeterminate.
+    // Like any chrono::duration, a default-initialized Duration is
+    // indeterminate.
     Duration d{};
     CHECK(d.count() == 0.0);
   }

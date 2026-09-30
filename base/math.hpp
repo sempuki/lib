@@ -16,4 +16,3 @@ using Vec3 = Vector<3>;
 using Vec2 = Vector<2>;
 
 }  // namespace lib
-

@@ -46,15 +46,9 @@ TEST_CASE("Contracts") {
     }
     REQUIRE(thrown);
   }
-  SECTION("ShouldNotThrowGivenTrueExpect") {
-    REQUIRE_NOTHROW(EXPECT(true));
-  }
-  SECTION("ShouldNotThrowGivenTrueEnsure") {
-    REQUIRE_NOTHROW(ENSURE(true));
-  }
-  SECTION("ShouldNotThrowGivenTrueAssert") {
-    REQUIRE_NOTHROW(ASSERT(true));
-  }
+  SECTION("ShouldNotThrowGivenTrueExpect") { REQUIRE_NOTHROW(EXPECT(true)); }
+  SECTION("ShouldNotThrowGivenTrueEnsure") { REQUIRE_NOTHROW(ENSURE(true)); }
+  SECTION("ShouldNotThrowGivenTrueAssert") { REQUIRE_NOTHROW(ASSERT(true)); }
 }
 
 }  // namespace lib

@@ -14,23 +14,25 @@ struct PostconditionError final : public ContractError {};
 struct InvariantError final : public ContractError {};
 }  // namespace lib::contract
 
-#define EXPECT(expr)                                                                 \
-  [&] {                                                                              \
-    if (!(expr)) [[unlikely]] {                                                      \
-      throw ::lib::contract::PreconditionError{std::source_location::current()}; \
-    }                                                                                \
+#define EXPECT(expr)                            \
+  [&] {                                         \
+    if (!(expr)) [[unlikely]] {                 \
+      throw ::lib::contract::PreconditionError{ \
+          std::source_location::current()};     \
+    }                                           \
   }()
 
-#define ENSURE(expr)                                                                  \
-  [&] {                                                                               \
-    if (!(expr)) [[unlikely]] {                                                       \
-      throw ::lib::contract::PostconditionError{std::source_location::current()}; \
-    }                                                                                 \
+#define ENSURE(expr)                             \
+  [&] {                                          \
+    if (!(expr)) [[unlikely]] {                  \
+      throw ::lib::contract::PostconditionError{ \
+          std::source_location::current()};      \
+    }                                            \
   }()
 
-#define ASSERT(expr)                                                              \
-  [&] {                                                                           \
-    if (!(expr)) [[unlikely]] {                                                   \
+#define ASSERT(expr)                                                          \
+  [&] {                                                                       \
+    if (!(expr)) [[unlikely]] {                                               \
       throw ::lib::contract::InvariantError{std::source_location::current()}; \
-    }                                                                             \
+    }                                                                         \
   }()
