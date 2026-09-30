@@ -36,3 +36,6 @@ bazel-*
 
 # Local Bazel overrides
 user.bazelrc
+
+# Generated for clangd by bazel/compile_commands.py in lib
+compile_commands.json
