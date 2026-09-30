@@ -2,49 +2,51 @@
 
 #include "base/time.hpp"
 
+#include <chrono>
+#include <type_traits>
+
 #include "base/testing.hpp"
 
 namespace lib {
 
-TEST_CASE("SimClock") {
-  SECTION("ShouldReturnTimePointFromStaticNow") {
-    auto time_point = SimClock::now();
-    REQUIRE(std::is_same_v<decltype(time_point), TimePoint>);
-  }
-}
+using namespace std::chrono_literals;
+
+template <typename A, typename B>
+concept Subtractable = requires(A a, B b) { a - b; };
 
 TEST_CASE("Duration") {
-  SECTION("IsChronoDurationFractionsOfSecond") {
-    REQUIRE(
-        std::is_same_v<Duration, std::chrono::duration<double, std::ratio<1>>>);
+  SECTION("ShouldCountIntegerNanosecondsGivenDefinition") {
+    static_assert(std::is_same_v<Duration, std::chrono::nanoseconds>);
   }
 
-  SECTION("ShouldConvertToAndFromDouble") {
-    Duration d{3.14};
-    CHECK(d.count() == 3.14);
+  SECTION("ShouldBeExactGivenManySmallSteps") {
+    // Ten steps of 0.1 s land exactly on 1 s, which double seconds do not.
+    Duration total{};
+    for (int i = 0; i < 10; ++i) {
+      total += 100ms;
+    }
+    CHECK(total == 1s);
   }
 
-  SECTION("ShouldBeZeroWhenValueInitialized") {
-    // Like any chrono::duration, a default-initialized Duration is
-    // indeterminate.
-    Duration d{};
-    CHECK(d.count() == 0.0);
+  SECTION("ShouldBeZeroGivenValueInitialization") {
+    CHECK(Duration{}.count() == 0);
   }
 }
 
 TEST_CASE("TimePoint") {
-  SECTION("IsChronoTimePoint") {
-    REQUIRE(std::is_same_v<TimePoint, std::chrono::time_point<SimClock>>);
+  SECTION("ShouldBeZeroGivenDefault") {
+    CHECK(TimePoint{}.time_since_epoch() == Duration::zero());
   }
 
-  SECTION("ShouldConvertToAndFromDouble") {
-    TimePoint t{Duration{3.14}};
-    CHECK(t.time_since_epoch().count() == 3.14);
+  SECTION("ShouldAdvanceByDurationGivenAddition") {
+    CHECK((TimePoint{} + 250ms).time_since_epoch() == 250ms);
+    CHECK(TimePoint{2s} - TimePoint{500ms} == 1500ms);
   }
 
-  SECTION("ShouldBeZeroByDefault") {
-    TimePoint t;
-    CHECK(t.time_since_epoch().count() == 0.0);
+  SECTION("ShouldNotMixGivenWallClockTimePoint") {
+    static_assert(
+        !Subtractable<TimePoint, std::chrono::steady_clock::time_point>);
+    static_assert(Subtractable<TimePoint, TimePoint>);
   }
 }
 

@@ -6,24 +6,16 @@
 
 namespace lib {
 
-class SimClock final {
- public:
-  using rep = double;
-  using period = std::ratio<1>;  // durations are fractions of one second
-  using duration = std::chrono::duration<rep, period>;
-  using time_point = std::chrono::time_point<SimClock>;
-  static constexpr bool is_steady = true;
+// Simulation time, as opposed to wall time. SimTime is a tag: it makes a
+// simulation time point a different type from a wall-clock time point, so the
+// two cannot be mixed by accident. It has no now(), because a global clock
+// would give code a hidden source of time; current time comes from whatever
+// drives the simulation.
+//
+// Time counts int64 nanoseconds, which is exact and covers about 292 years.
+struct SimTime;
 
-  static time_point now() {
-    static SimClock static_clock;
-    return static_clock.time_;
-  }
-
- private:
-  time_point time_{duration{0.0}};
-};
-
-using Duration = SimClock::duration;
-using TimePoint = SimClock::time_point;
+using Duration = std::chrono::nanoseconds;
+using TimePoint = std::chrono::time_point<SimTime, Duration>;
 
 }  // namespace lib
