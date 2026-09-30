@@ -302,7 +302,7 @@ inline std::size_t stable_hash(std::string_view str) {
   std::uint64_t block;
   std::uint64_t result = diffuse_(str.size(), m1, m2);
 
-  for (; i < str.size() && block_size <= str.size(); i += block_size) {
+  for (; i + block_size <= str.size(); i += block_size) {
     std::memcpy(&block, str.data() + i, block_size);
     result = shuffle_(result) ^ diffuse_(block, ~m2, m3);
   }

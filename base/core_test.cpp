@@ -125,4 +125,19 @@ TEST_CASE("Demangle") {
   }
 }
 
+TEST_CASE("StableHash") {
+  SECTION("ShouldIgnoreBytesPastTheEndGivenLengthNotMultipleOfBlock") {
+    // Same 12 characters, followed by different bytes that are not part of
+    // the string. A hash that reads past the end would see the difference.
+    const std::string first = "abcdefghijklXXXX";
+    const std::string second = "abcdefghijklYYYY";
+    REQUIRE(stable_hash(std::string_view{first}.substr(0, 12)) ==
+            stable_hash(std::string_view{second}.substr(0, 12)));
+  }
+
+  SECTION("ShouldDifferGivenDifferentTails") {
+    REQUIRE(stable_hash("abcdefghijk1") != stable_hash("abcdefghijk2"));
+  }
+}
+
 }  // namespace lib
