@@ -239,13 +239,22 @@ def rewrite(argument: str, local: dict[str, pathlib.Path]) -> str:
     return argument
 
 
+def cc_targets(targets: list[str]) -> list[str]:
+    """The C++ targets `targets` names, as explicit labels. On the command line
+    `//...` skips targets tagged manual, such as tests that need a display;
+    bazel query does not, and explicit labels build whatever their tags."""
+    expression = 'kind("cc_.* rule", {})'.format(" + ".join(targets))
+    return bazel("query", *BAZEL_FLAGS, expression, "--output=label").split()
+
+
 def refresh(targets: list[str]) -> None:
     LSP.mkdir(exist_ok=True)
-    bazel("build", *BAZEL_FLAGS, *targets, capture=False)  # Generated headers.
+    labels = cc_targets(targets)
+    bazel("build", *BAZEL_FLAGS, *labels, capture=False)  # Generated headers.
     execution_root = pathlib.Path(bazel("info", *BAZEL_FLAGS, "execution_root").strip())
     # Dependencies too, for the sources of local repositories such as lib;
     # fetched repositories' sources are skipped below.
-    query = 'mnemonic("CppCompile", deps({}))'.format(" + ".join(targets))
+    query = 'mnemonic("CppCompile", deps(set({})))'.format(" ".join(labels))
     graph = json.loads(
         bazel("aquery", *BAZEL_FLAGS, query, "--output=jsonproto", "--include_artifacts=false")
     )
