@@ -17,8 +17,8 @@ namespace lib {
 
 namespace internal {
 
-void do_contract_failure(const char* kind, const char* condition,
-                         std::source_location location) {
+auto do_contract_failure(const char* kind, const char* condition,
+                         std::source_location location) -> void {
   throw std::logic_error(
       std::format("[{}:{}] {} Failed {}: {}", location.file_name(),
                   location.line(), location.function_name(), kind, condition));
@@ -27,7 +27,7 @@ void do_contract_failure(const char* kind, const char* condition,
 }  // namespace internal
 
 #if defined(__GNUC__)
-std::string demangle(const std::string& name) {
+auto demangle(const std::string& name) -> std::string {
   // Let __cxa_demangle allocate, since it may realloc() any buffer it is given.
   int out_status = 0;
   std::unique_ptr<char, decltype(&std::free)> demangled{

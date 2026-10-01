@@ -8,7 +8,7 @@
 
 namespace lib {
 
-constexpr bool StatusCodeShouldHaveSameBits() {
+constexpr auto StatusCodeShouldHaveSameBits() -> bool {
   StatusCode code;
   code.set_incident_bits(4u);
   code.set_condition_bits(5u);
@@ -176,20 +176,20 @@ class QuarkStatusDomain final
  public:
   using BaseType::BaseType;
 
-  std::string_view status_kind_message_of(
-      const StatusKind* kind) const noexcept override {
+  auto status_kind_message_of(const StatusKind* kind) const noexcept
+      -> std::string_view override {
     message_of_condition++;
     return BaseType::status_kind_message_of(kind);
   }
 
-  std::string_view status_base_message_of(
-      const StatusBase* status) const noexcept override {
+  auto status_base_message_of(const StatusBase* status) const noexcept
+      -> std::string_view override {
     message_of_incident++;
     return BaseType::status_base_message_of(status);
   }
 
-  std::source_location status_base_location_of(
-      const StatusBase* status) const noexcept override {
+  auto status_base_location_of(const StatusBase* status) const noexcept
+      -> std::source_location override {
     location_of_incident++;
     return BaseType::status_base_location_of(status);
   }
@@ -492,16 +492,16 @@ TEST_CASE("StatusKind") {
 
 constexpr QuarkKindDomain quarks{42u, "quark"};
 
-constexpr bool StatusKindShouldHaveSameMessage() {
+constexpr auto StatusKindShouldHaveSameMessage() -> bool {
   StatusKind kind = quarks.watch_kind(Quark::CHARM);
   return kind.message() == "CHARM";
 }
-constexpr bool StatusKindShouldCompareSame() {
+constexpr auto StatusKindShouldCompareSame() -> bool {
   StatusKind kind_a = quarks.watch_kind(Quark::CHARM);
   StatusKind kind_b = quarks.watch_kind(Quark::CHARM);
   return kind_a == kind_b;
 }
-constexpr bool StatusKindShouldCompareDifferent() {
+constexpr auto StatusKindShouldCompareDifferent() -> bool {
   StatusKind kind_a = quarks.watch_kind(Quark::CHARM);
   StatusKind kind_b = quarks.watch_kind(Quark::STRANGE);
   return kind_a != kind_b;

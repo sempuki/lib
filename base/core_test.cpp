@@ -40,14 +40,14 @@ TEST_CASE("NarrowCast") {
 
 namespace {
 
-std::expected<int, std::string> half_of(int value) {
+auto half_of(int value) -> std::expected<int, std::string> {
   if (value % 2 != 0) {
     return std::unexpected("odd");
   }
   return value / 2;
 }
 
-std::expected<std::unique_ptr<int>, std::string> boxed(int value) {
+auto boxed(int value) -> std::expected<std::unique_ptr<int>, std::string> {
   if (value < 0) {
     return std::unexpected("negative");
   }
@@ -55,26 +55,26 @@ std::expected<std::unique_ptr<int>, std::string> boxed(int value) {
 }
 
 // Halves twice, declaring each result.
-std::expected<int, std::string> quarter_of(int value) {
+auto quarter_of(int value) -> std::expected<int, std::string> {
   ASSIGN_OR_RETURN(int half, half_of(value));
   ASSIGN_OR_RETURN(int quarter, half_of(half));
   return quarter;
 }
 
 // Checks without keeping the value, then assigns an existing variable.
-std::expected<int, std::string> checked_half_of(int value) {
+auto checked_half_of(int value) -> std::expected<int, std::string> {
   RETURN_IF_UNEXPECTED(half_of(value));
   int half = 0;
   ASSIGN_OR_RETURN(half, half_of(value));
   return half;
 }
 
-std::expected<int, std::string> unboxed(int value) {
+auto unboxed(int value) -> std::expected<int, std::string> {
   ASSIGN_OR_RETURN(std::unique_ptr<int> box, boxed(value));
   return *box;
 }
 
-std::expected<void, std::string> check_even(int value, bool skip) {
+auto check_even(int value, bool skip) -> std::expected<void, std::string> {
   if (skip)
     RETURN_IF_UNEXPECTED(half_of(value))
   else {

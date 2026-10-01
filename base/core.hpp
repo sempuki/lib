@@ -28,27 +28,28 @@
 
 #define DECLARE_COPY_DEFAULT(class_name__)              \
   class_name__(const class_name__&) noexcept = default; \
-  class_name__& operator=(const class_name__&) noexcept = default;
+  auto operator=(const class_name__&) noexcept -> class_name__& = default;
 
 #define DECLARE_COPY_DELETE(class_name__)     \
   class_name__(const class_name__&) = delete; \
-  class_name__& operator=(const class_name__&) = delete;
+  auto operator=(const class_name__&)->class_name__& = delete;
 
 #define DECLARE_MOVE_DEFAULT(class_name__)         \
   class_name__(class_name__&&) noexcept = default; \
-  class_name__& operator=(class_name__&&) noexcept = default;
+  auto operator=(class_name__&&) noexcept -> class_name__& = default;
 
 #define DECLARE_MOVE_DELETE(class_name__) \
   class_name__(class_name__&&) = delete;  \
-  class_name__& operator=(class_name__&&) = delete;
+  auto operator=(class_name__&&)->class_name__& = delete;
 
-#define DECLARE_COPY_DEFAULT_CONSTEXPR(class_name__)              \
-  constexpr class_name__(const class_name__&) noexcept = default; \
-  constexpr class_name__& operator=(const class_name__&) noexcept = default;
+#define DECLARE_COPY_DEFAULT_CONSTEXPR(class_name__)                        \
+  constexpr class_name__(const class_name__&) noexcept = default;           \
+  constexpr auto operator=(const class_name__&) noexcept -> class_name__& = \
+      default;
 
 #define DECLARE_MOVE_DEFAULT_CONSTEXPR(class_name__)         \
   constexpr class_name__(class_name__&&) noexcept = default; \
-  constexpr class_name__& operator=(class_name__&&) noexcept = default;
+  constexpr auto operator=(class_name__&&) noexcept -> class_name__& = default;
 
 #define DERIVE_FINAL_WITH_CONSTRUCTORS(derived_name__, base_name__) \
   class derived_name__ final : public base_name__ {                 \
@@ -65,9 +66,9 @@ namespace lib::internal {
 // is only a compare and a call, which keeps small checked functions (such as
 // CheckedPointer::operator->) cheap enough for every compiler to inline. The
 // default argument captures the caller's location.
-[[noreturn, gnu::cold, gnu::noinline]] void do_contract_failure(
+[[noreturn, gnu::cold, gnu::noinline]] auto do_contract_failure(
     const char* kind, const char* condition,
-    std::source_location location = std::source_location::current());
+    std::source_location location = std::source_location::current()) -> void;
 
 }  // namespace lib::internal
 
@@ -120,7 +121,7 @@ namespace lib::internal {
 
 namespace lib {
 
-inline std::size_t allocate_static_increment() {
+inline auto allocate_static_increment() -> std::size_t {
   // Starts at 1, so 0 always means "none", such as a default StatusKind's
   // domain.
   static std::atomic<std::size_t> increment = 1;
@@ -128,7 +129,7 @@ inline std::size_t allocate_static_increment() {
 }
 
 template <std::integral ToType, std::integral FromType>
-ToType narrow_cast(FromType from) {
+auto narrow_cast(FromType from) -> ToType {
   ToType to = static_cast<ToType>(from);
   CHECK_PRECONDITION(std::cmp_equal(to, from))
   return to;
@@ -150,15 +151,15 @@ class CheckedPointer {
 
   explicit operator bool() const { return arg_; }
 
-  Type& operator*() const {
+  auto operator*() const -> Type& {
     CHECK_PRECONDITION(arg_);
     return *arg_;
   }
-  Type* operator->() const {
+  auto operator->() const -> Type* {
     CHECK_PRECONDITION(arg_);
     return arg_;
   }
-  Type* get() const {
+  auto get() const -> Type* {
     CHECK_PRECONDITION(arg_);
     return arg_;
   }
@@ -259,9 +260,9 @@ Overloaded(Ts...) -> Overloaded<Ts...>;
 
 template <typename CallableType, typename... ArgumentTypes,
           typename ContinuationType>
-void invoke_with_continuation(ContinuationType&& continuation,
+auto invoke_with_continuation(ContinuationType&& continuation,
                               CallableType&& callable,
-                              ArgumentTypes&&... arguments) {
+                              ArgumentTypes&&... arguments) -> void {
   using CallableResultType =
       std::invoke_result_t<CallableType, ArgumentTypes...>;
 
@@ -279,20 +280,20 @@ struct Empty final {};
 
 // The readable form of a mangled type name, or the name itself if it cannot be
 // demangled.
-std::string demangle(const std::string& name);
+auto demangle(const std::string& name) -> std::string;
 
 template <typename Type>
-std::string to_type_string() {
+auto to_type_string() -> std::string {
   return demangle(typeid(Type).name());
 }
 
 template <typename Type>
-std::string to_type_string(Type&& object) {
+auto to_type_string(Type&& object) -> std::string {
   return demangle(typeid(decltype(object)).name());
 }
 
 template <typename ObjectType>
-void dump_object_bytes(const ObjectType& object) {
+auto dump_object_bytes(const ObjectType& object) -> void {
   std::print("** {}: ", to_type_string<ObjectType>());
   auto* begin_address = reinterpret_cast<const char*>(std::addressof(object));
   auto* end_address = reinterpret_cast<const char*>(std::addressof(object) + 1);
@@ -302,7 +303,7 @@ void dump_object_bytes(const ObjectType& object) {
   std::print("\n");
 }
 
-inline std::size_t stable_hash(std::string_view str) {
+inline auto stable_hash(std::string_view str) -> std::size_t {
   static const auto shuffle_ = [](std::uint64_t block) {
     return  // clang-format off
       ((block & 0xFFFF'0000'0000'0000) >> 16) |

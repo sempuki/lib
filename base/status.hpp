@@ -47,56 +47,56 @@ class StatusCode final {
   constexpr StatusCode() = default;
   constexpr ~StatusCode() = default;
 
-  constexpr std::size_t domain_bits() const noexcept {
+  constexpr auto domain_bits() const noexcept -> std::size_t {
     return (bits_ & DOMAIN_MASK) >> DOMAIN_SHIFT;
   }
 
-  constexpr void set_domain_bits(std::size_t bits) noexcept {
+  constexpr auto set_domain_bits(std::size_t bits) noexcept -> void {
     bits_ &= ~DOMAIN_MASK;
     bits_ |= least_16_bits_as_uint64(bits) << DOMAIN_SHIFT;
     CHECK_POSTCONDITION(std::cmp_equal(bits, domain_bits()));
   }
 
-  constexpr void set_domain_bits(StatusCode code) noexcept {
+  constexpr auto set_domain_bits(StatusCode code) noexcept -> void {
     bits_ &= ~DOMAIN_MASK;
     bits_ |= code.bits_ & DOMAIN_MASK;
   }
 
-  constexpr std::size_t condition_bits() const noexcept {
+  constexpr auto condition_bits() const noexcept -> std::size_t {
     return (bits_ & CONDITION_MASK) >> CONDITION_SHIFT;
   }
 
-  constexpr void set_condition_bits(std::size_t bits) noexcept {
+  constexpr auto set_condition_bits(std::size_t bits) noexcept -> void {
     bits_ &= ~CONDITION_MASK;
     bits_ |= least_16_bits_as_uint64(bits) << CONDITION_SHIFT;
     CHECK_POSTCONDITION(std::cmp_equal(bits, condition_bits()));
   }
 
-  constexpr void set_condition_bits(StatusCode code) noexcept {
+  constexpr auto set_condition_bits(StatusCode code) noexcept -> void {
     bits_ &= ~CONDITION_MASK;
     bits_ |= code.bits_ & CONDITION_MASK;
   }
 
-  constexpr std::size_t incident_bits() const noexcept {
+  constexpr auto incident_bits() const noexcept -> std::size_t {
     return (bits_ & INCIDENT_MASK) >> INCIDENT_SHIFT;
   }
 
-  constexpr void set_incident_bits(std::size_t bits) noexcept {
+  constexpr auto set_incident_bits(std::size_t bits) noexcept -> void {
     bits_ &= ~INCIDENT_MASK;
     bits_ |= least_16_bits_as_uint64(bits) << INCIDENT_SHIFT;
     CHECK_POSTCONDITION(std::cmp_equal(bits, incident_bits()));
   }
 
-  constexpr void set_incident_bits(StatusCode code) noexcept {
+  constexpr auto set_incident_bits(StatusCode code) noexcept -> void {
     bits_ &= ~INCIDENT_MASK;
     bits_ |= code.bits_ & INCIDENT_MASK;
   }
 
-  constexpr bool is_same_kind(StatusCode that) const noexcept {
+  constexpr auto is_same_kind(StatusCode that) const noexcept -> bool {
     return (bits_ & KIND_COMPARE_MASK) == (that.bits_ & KIND_COMPARE_MASK);
   }
 
-  constexpr bool is_same_code(StatusCode that) const noexcept {
+  constexpr auto is_same_code(StatusCode that) const noexcept -> bool {
     return (bits_ & CODE_COMPARE_MASK) == (that.bits_ & CODE_COMPARE_MASK);
   }
 
@@ -120,17 +120,20 @@ class StatusCode final {
   constexpr static std::uint64_t CODE_COMPARE_MASK =
       DOMAIN_MASK | CONDITION_MASK | INCIDENT_MASK;
 
-  constexpr static std::uint64_t least_16_bits_as_uint64(std::size_t bits) {
+  constexpr static auto least_16_bits_as_uint64(std::size_t bits)
+      -> std::uint64_t {
     constexpr std::uint64_t SHIFT = 64 - 16;
     return ((static_cast<std::uint64_t>(bits) << SHIFT) >> SHIFT);
   }
 
-  friend constexpr bool operator<(StatusCode lhs, StatusCode rhs) noexcept {
+  friend constexpr auto operator<(StatusCode lhs, StatusCode rhs) noexcept
+      -> bool {
     return lhs.bits_ < rhs.bits_;
   }
 
   // In hex, leaving the stream's format as it was.
-  friend std::ostream& operator<<(std::ostream& out, StatusCode self) noexcept {
+  friend auto operator<<(std::ostream& out, StatusCode self) noexcept
+      -> std::ostream& {
     std::ios_base::fmtflags flags = out.flags();
     out << std::hex << self.bits_;
     out.flags(flags);
@@ -142,42 +145,45 @@ class StatusCode final {
 //
 class StatusKindInspectInterface {
  public:
-  constexpr virtual std::string_view status_kind_message_of(
-      StatusKind const*) const noexcept = 0;
+  constexpr virtual auto status_kind_message_of(
+      StatusKind const*) const noexcept -> std::string_view = 0;
 };
 
 class StatusKindBuilderInterface {
  public:
-  constexpr virtual StatusCode make_status_kind_code(
-      std::size_t condition_code) const noexcept = 0;
+  constexpr virtual auto make_status_kind_code(
+      std::size_t condition_code) const noexcept -> StatusCode = 0;
 };
 
 class StatusBaseInspectInterface {
  public:
-  virtual std::string_view status_base_message_of(
-      StatusBase const*) const noexcept = 0;
+  virtual auto status_base_message_of(StatusBase const*) const noexcept
+      -> std::string_view = 0;
 
-  virtual std::source_location status_base_location_of(
-      StatusBase const*) const noexcept = 0;
+  virtual auto status_base_location_of(StatusBase const*) const noexcept
+      -> std::source_location = 0;
 
-  virtual int status_base_platform_error_of(
-      StatusBase const*) const noexcept = 0;
+  virtual auto status_base_platform_error_of(StatusBase const*) const noexcept
+      -> int = 0;
 };
 
 class StatusBaseBuilderInterface {
  public:
-  virtual StatusCode make_status_base_code(
-      std::size_t condition_code, std::size_t incident_code) const noexcept = 0;
+  virtual auto make_status_base_code(std::size_t condition_code,
+                                     std::size_t incident_code) const noexcept
+      -> StatusCode = 0;
 };
 
 class StatusConditionEquivalenceInterface {
  public:
-  virtual bool has_equivalent_condition_of(StatusBase const*,
-                                           StatusBase const*) const noexcept {
+  virtual auto has_equivalent_condition_of(StatusBase const*,
+                                           StatusBase const*) const noexcept
+      -> bool {
     return false;
   }
-  virtual bool has_equivalent_condition_of(StatusBase const*,
-                                           StatusKind const*) const noexcept {
+  virtual auto has_equivalent_condition_of(StatusBase const*,
+                                           StatusKind const*) const noexcept
+      -> bool {
     return false;
   }
 };
@@ -198,10 +204,10 @@ class StatusKindBuilderBase : public StatusKindBuilderInterface {
                                            std::string_view domain_name)
       : domain_code_{domain_code, 0U, 0U}, name_{domain_name} {}
 
-  constexpr std::string_view name() const noexcept { return name_; }
+  constexpr auto name() const noexcept -> std::string_view { return name_; }
 
-  constexpr StatusCode make_status_kind_code(
-      std::size_t condition_code) const noexcept final {
+  constexpr auto make_status_kind_code(
+      std::size_t condition_code) const noexcept -> StatusCode final {
     return StatusCode{domain_code_.domain_bits(), condition_code, 0U};
   }
 
@@ -223,18 +229,18 @@ class StatusDomainBuilderBase : public StatusKindBuilderInterface,
                                    std::string_view domain_name)
       : domain_code_{domain_code, 0U, 0U}, name_{domain_name} {}
 
-  std::string_view name() const noexcept { return name_; }
+  auto name() const noexcept -> std::string_view { return name_; }
 
-  StatusCode make_status_kind_code(
-      std::size_t condition_code) const noexcept final {
+  auto make_status_kind_code(std::size_t condition_code) const noexcept
+      -> StatusCode final {
     return StatusCode{domain_code_.domain_bits(),  //
                       condition_code,              //
                       0U};
   }
 
-  StatusCode make_status_base_code(
-      std::size_t condition_code,
-      std::size_t incident_code) const noexcept final {
+  auto make_status_base_code(std::size_t condition_code,
+                             std::size_t incident_code) const noexcept
+      -> StatusCode final {
     return StatusCode{domain_code_.domain_bits(),  //
                       condition_code,              //
                       incident_code};
@@ -246,19 +252,19 @@ class StatusDomainBuilderBase : public StatusKindBuilderInterface,
 };
 
 namespace internal {
-Status make_status(  //
-    StatusCode, StatusDomainInterface const*) noexcept;
-StatusDetached make_status_detached(  //
-    StatusCode, StatusDomainInterface const*) noexcept;
-constexpr StatusKind make_status_kind(  //
-    StatusCode, StatusKindInspectInterface const*) noexcept;
+auto make_status(  //
+    StatusCode, StatusDomainInterface const*) noexcept -> Status;
+auto make_status_detached(  //
+    StatusCode, StatusDomainInterface const*) noexcept -> StatusDetached;
+constexpr auto make_status_kind(  //
+    StatusCode, StatusKindInspectInterface const*) noexcept -> StatusKind;
 }  // namespace internal
 
-constexpr std::size_t domain_code_of(StatusKind const*) noexcept;
-constexpr std::size_t domain_code_of(StatusBase const*) noexcept;
-constexpr std::size_t condition_code_of(StatusKind const*) noexcept;
-constexpr std::size_t condition_code_of(StatusBase const*) noexcept;
-constexpr std::size_t incident_code_of(StatusBase const*) noexcept;
+constexpr auto domain_code_of(StatusKind const*) noexcept -> std::size_t;
+constexpr auto domain_code_of(StatusBase const*) noexcept -> std::size_t;
+constexpr auto condition_code_of(StatusKind const*) noexcept -> std::size_t;
+constexpr auto condition_code_of(StatusBase const*) noexcept -> std::size_t;
+constexpr auto incident_code_of(StatusBase const*) noexcept -> std::size_t;
 
 //==============================================================================
 //
@@ -270,11 +276,11 @@ class StatusKind final {
   constexpr StatusKind() = default;
   constexpr ~StatusKind() = default;
 
-  constexpr std::string_view message() const noexcept {
+  constexpr auto message() const noexcept -> std::string_view {
     return domain_ ? domain_->status_kind_message_of(this) : std::string_view{};
   }
 
-  constexpr bool operator==(StatusKind that) const noexcept {
+  constexpr auto operator==(StatusKind that) const noexcept -> bool {
     return kind_code_.is_same_kind(that.kind_code_);
   }
 
@@ -288,21 +294,26 @@ class StatusKind final {
 
   friend class StatusBase;
 
-  friend constexpr StatusKind internal::make_status_kind(
-      StatusCode, StatusKindInspectInterface const*) noexcept;
+  friend constexpr auto internal::make_status_kind(
+      StatusCode, StatusKindInspectInterface const*) noexcept -> StatusKind;
 
-  friend constexpr std::size_t domain_code_of(StatusKind const*) noexcept;
-  friend constexpr std::size_t condition_code_of(StatusKind const*) noexcept;
+  friend constexpr auto domain_code_of(StatusKind const*) noexcept
+      -> std::size_t;
+  friend constexpr auto condition_code_of(StatusKind const*) noexcept
+      -> std::size_t;
 
-  friend constexpr bool operator!=(StatusKind a, StatusKind b) noexcept {
+  friend constexpr auto operator!=(StatusKind a, StatusKind b) noexcept
+      -> bool {
     return !a.operator==(b);
   }
 
-  friend constexpr bool operator<(StatusKind lhs, StatusKind rhs) noexcept {
+  friend constexpr auto operator<(StatusKind lhs, StatusKind rhs) noexcept
+      -> bool {
     return lhs.kind_code_ < rhs.kind_code_;
   }
 
-  friend std::ostream& operator<<(std::ostream& out, StatusKind self) noexcept {
+  friend auto operator<<(std::ostream& out, StatusKind self) noexcept
+      -> std::ostream& {
     out << self.message();
     return out;
   }
@@ -318,11 +329,11 @@ class StatusBase {
   StatusBase() = delete;
   ~StatusBase() = default;
 
-  bool operator==(StatusBase that) const noexcept {
+  auto operator==(StatusBase that) const noexcept -> bool {
     return status_code_.is_same_code(that.status_code_);
   }
 
-  bool operator==(StatusKind that) const noexcept {
+  auto operator==(StatusKind that) const noexcept -> bool {
     return status_code_.is_same_kind(that.kind_code_);
   }
 
@@ -331,23 +342,26 @@ class StatusBase {
 
   StatusCode status_code_;
 
-  friend constexpr std::size_t domain_code_of(StatusBase const*) noexcept;
-  friend constexpr std::size_t condition_code_of(StatusBase const*) noexcept;
-  friend constexpr std::size_t incident_code_of(StatusBase const*) noexcept;
+  friend constexpr auto domain_code_of(StatusBase const*) noexcept
+      -> std::size_t;
+  friend constexpr auto condition_code_of(StatusBase const*) noexcept
+      -> std::size_t;
+  friend constexpr auto incident_code_of(StatusBase const*) noexcept
+      -> std::size_t;
 
-  friend bool operator==(StatusKind lhs, StatusBase rhs) noexcept {
+  friend auto operator==(StatusKind lhs, StatusBase rhs) noexcept -> bool {
     return rhs.operator==(lhs);
   }
 
-  friend bool operator!=(StatusBase lhs, StatusKind rhs) noexcept {
+  friend auto operator!=(StatusBase lhs, StatusKind rhs) noexcept -> bool {
     return !lhs.operator==(rhs);
   }
 
-  friend bool operator!=(StatusKind lhs, StatusBase rhs) noexcept {
+  friend auto operator!=(StatusKind lhs, StatusBase rhs) noexcept -> bool {
     return !rhs.operator==(lhs);
   }
 
-  friend bool operator<(StatusBase lhs, StatusBase rhs) noexcept {
+  friend auto operator<(StatusBase lhs, StatusBase rhs) noexcept -> bool {
     return lhs.status_code_ < rhs.status_code_;
   }
 };
@@ -362,9 +376,11 @@ class StatusDetached final : public StatusBase {
   StatusDetached() = delete;
   ~StatusDetached() = default;
 
-  std::string_view message() const noexcept { return entry_.message; }
-  std::source_location location() const noexcept { return entry_.location; }
-  int platform_error() const noexcept { return entry_.platform_error; }
+  auto message() const noexcept -> std::string_view { return entry_.message; }
+  auto location() const noexcept -> std::source_location {
+    return entry_.location;
+  }
+  auto platform_error() const noexcept -> int { return entry_.platform_error; }
 
  private:
   explicit StatusDetached(StatusCode code, StatusDomainInterface const* domain)
@@ -376,11 +392,11 @@ class StatusDetached final : public StatusBase {
 
   StatusIncidentEntry entry_;
 
-  friend StatusDetached internal::make_status_detached(  //
-      StatusCode, StatusDomainInterface const*) noexcept;
+  friend auto internal::make_status_detached(  //
+      StatusCode, StatusDomainInterface const*) noexcept -> StatusDetached;
 
-  friend std::ostream& operator<<(std::ostream& out,
-                                  StatusDetached self) noexcept {
+  friend auto operator<<(std::ostream& out, StatusDetached self) noexcept
+      -> std::ostream& {
     out << self.message();
     return out;
   }
@@ -396,32 +412,32 @@ class Status final : public StatusBase {
   Status() = delete;
   ~Status() = default;
 
-  std::string_view message() const noexcept {
+  auto message() const noexcept -> std::string_view {
     return domain_->status_base_message_of(this);
   }
-  std::source_location location() const noexcept {
+  auto location() const noexcept -> std::source_location {
     return domain_->status_base_location_of(this);
   }
 
-  int platform_error() const noexcept {
+  auto platform_error() const noexcept -> int {
     return domain_->status_base_platform_error_of(this);
   }
 
-  StatusKind kind() const noexcept {
+  auto kind() const noexcept -> StatusKind {
     return internal::make_status_kind(status_code_, domain_);
   }
 
-  StatusDetached detach_copy() const noexcept {
+  auto detach_copy() const noexcept -> StatusDetached {
     return internal::make_status_detached(status_code_, domain_);
   }
 
   // Compares conditions, not incidents: two raises of one condition match.
-  bool has_equivalent_condition_as(Status that) const noexcept {
+  auto has_equivalent_condition_as(Status that) const noexcept -> bool {
     return kind() == that.kind() ||
            domain_->has_equivalent_condition_of(this, &that);
   }
 
-  bool has_equivalent_condition_as(StatusKind that) const noexcept {
+  auto has_equivalent_condition_as(StatusKind that) const noexcept -> bool {
     return *this == that || domain_->has_equivalent_condition_of(this, &that);
   }
 
@@ -431,10 +447,11 @@ class Status final : public StatusBase {
 
   StatusDomainInterface const* domain_ = nullptr;
 
-  friend Status internal::make_status(  //
-      StatusCode, const StatusDomainInterface*) noexcept;
+  friend auto internal::make_status(  //
+      StatusCode, const StatusDomainInterface*) noexcept -> Status;
 
-  friend std::ostream& operator<<(std::ostream& out, Status self) noexcept {
+  friend auto operator<<(std::ostream& out, Status self) noexcept
+      -> std::ostream& {
     out << self.message();
     return out;
   }
@@ -443,41 +460,46 @@ class Status final : public StatusBase {
 //------------------------------------------------------------------------------
 //
 namespace internal {
-inline Status make_status(  //
-    StatusCode code, const StatusDomainInterface* domain) noexcept {
+inline auto make_status(  //
+    StatusCode code, const StatusDomainInterface* domain) noexcept -> Status {
   return Status{code, domain};
 }
 
-inline StatusDetached make_status_detached(  //
-    StatusCode code, const StatusDomainInterface* domain) noexcept {
+inline auto make_status_detached(  //
+    StatusCode code, const StatusDomainInterface* domain) noexcept
+    -> StatusDetached {
   return StatusDetached{code, domain};
 }
 
-inline constexpr StatusKind make_status_kind(  //
-    StatusCode code, StatusKindInspectInterface const* domain) noexcept {
+inline constexpr auto make_status_kind(  //
+    StatusCode code, StatusKindInspectInterface const* domain) noexcept
+    -> StatusKind {
   return StatusKind{code, domain};
 }
 }  // namespace internal
 
-inline constexpr std::size_t domain_code_of(StatusKind const* self) noexcept {
+inline constexpr auto domain_code_of(StatusKind const* self) noexcept
+    -> std::size_t {
   return self->kind_code_.domain_bits();
 }
 
-inline constexpr std::size_t domain_code_of(StatusBase const* self) noexcept {
+inline constexpr auto domain_code_of(StatusBase const* self) noexcept
+    -> std::size_t {
   return self->status_code_.domain_bits();
 }
 
-inline constexpr std::size_t condition_code_of(
-    StatusKind const* self) noexcept {
+inline constexpr auto condition_code_of(StatusKind const* self) noexcept
+    -> std::size_t {
   return self->kind_code_.condition_bits();
 }
 
-inline constexpr std::size_t condition_code_of(
-    StatusBase const* self) noexcept {
+inline constexpr auto condition_code_of(StatusBase const* self) noexcept
+    -> std::size_t {
   return self->status_code_.condition_bits();
 }
 
-inline constexpr std::size_t incident_code_of(StatusBase const* self) noexcept {
+inline constexpr auto incident_code_of(StatusBase const* self) noexcept
+    -> std::size_t {
   return self->status_code_.incident_bits();
 }
 
@@ -486,25 +508,26 @@ inline constexpr std::size_t incident_code_of(StatusBase const* self) noexcept {
 template <typename ConditionEnumType, std::size_t ConditionCount>
 class EnumStatusKindConditionMixin {
  public:
-  constexpr StatusKind watch_kind(ConditionEnumType condition) const noexcept {
+  constexpr auto watch_kind(ConditionEnumType condition) const noexcept
+      -> StatusKind {
     return handle_watch_kind(condition);
   }
 
  protected:
-  virtual StatusKind handle_watch_kind(
-      ConditionEnumType condition) const noexcept = 0;
+  virtual auto handle_watch_kind(ConditionEnumType condition) const noexcept
+      -> StatusKind = 0;
 
-  StatusKind do_watch_kind(                       //
+  auto do_watch_kind(                             //
       ConditionEnumType condition,                //
       StatusKindBuilderInterface const* builder,  //
-      StatusKindInspectInterface const* domain) const noexcept {
+      StatusKindInspectInterface const* domain) const noexcept -> StatusKind {
     auto condition_code = static_cast<std::size_t>(condition);
     return internal::make_status_kind(
         builder->make_status_kind_code(condition_code), domain);
   }
 
-  constexpr std::string_view status_kind_message_of(
-      StatusKind const* kind) const noexcept {
+  constexpr auto status_kind_message_of(StatusKind const* kind) const noexcept
+      -> std::string_view {
     return conditions_[condition_code_of(kind)].message;
   }
 
@@ -523,9 +546,9 @@ template <typename ConditionEnumType,  //
           std::size_t IncidentCountMax>
 class EnumStatusIncidentMixin {
  public:
-  Status raise_status(              //
+  auto raise_status(                //
       ConditionEnumType condition,  //
-      std::string message = {}) noexcept {
+      std::string message = {}) noexcept -> Status {
     std::source_location location{};  // Empty.
     return handle_raise_incident(condition, StatusIncidentEntry{
                                                 .message = std::move(message),
@@ -534,11 +557,11 @@ class EnumStatusIncidentMixin {
                                             });
   }
 
-  Status raise_status_here(         //
+  auto raise_status_here(           //
       ConditionEnumType condition,  //
       std::string message = {},     //
-      std::source_location location =
-          std::source_location::current()) noexcept {
+      std::source_location location = std::source_location::current()) noexcept
+      -> Status {
     return handle_raise_incident(condition, StatusIncidentEntry{
                                                 .message = std::move(message),
                                                 .location = std::move(location),
@@ -546,10 +569,10 @@ class EnumStatusIncidentMixin {
                                             });
   }
 
-  Status raise_error(               //
+  auto raise_error(                 //
       ConditionEnumType condition,  //
       int platform_error,           //
-      std::string message = {}) noexcept {
+      std::string message = {}) noexcept -> Status {
     std::source_location location{};  // Empty.
     return handle_raise_incident(condition,
                                  StatusIncidentEntry{
@@ -559,12 +582,12 @@ class EnumStatusIncidentMixin {
                                  });
   }
 
-  Status raise_error_here(          //
+  auto raise_error_here(            //
       ConditionEnumType condition,  //
       int platform_error,           //
       std::string message = {},
-      std::source_location location =
-          std::source_location::current()) noexcept {
+      std::source_location location = std::source_location::current()) noexcept
+      -> Status {
     return handle_raise_incident(condition,
                                  StatusIncidentEntry{
                                      .message = std::move(message),
@@ -574,14 +597,15 @@ class EnumStatusIncidentMixin {
   }
 
  protected:
-  virtual Status handle_raise_incident(ConditionEnumType condition,
-                                       StatusIncidentEntry entry) noexcept = 0;
+  virtual auto handle_raise_incident(ConditionEnumType condition,
+                                     StatusIncidentEntry entry) noexcept
+      -> Status = 0;
 
-  Status do_raise_incident(                       //
+  auto do_raise_incident(                         //
       ConditionEnumType condition,                //
       StatusIncidentEntry entry,                  //
       StatusBaseBuilderInterface const* builder,  //
-      StatusDomainInterface const* domain) noexcept {
+      StatusDomainInterface const* domain) noexcept -> Status {
     std::size_t current = next_incident_++;
     next_incident_ %= incidents_.size();
     incidents_[current] = std::move(entry);
@@ -591,17 +615,18 @@ class EnumStatusIncidentMixin {
         builder->make_status_base_code(condition_code, current), domain);
   }
 
-  std::string_view status_base_message_of(
-      StatusBase const* status) const noexcept {
+  auto status_base_message_of(StatusBase const* status) const noexcept
+      -> std::string_view {
     return incidents_[incident_code_of(status)].message;
   }
 
-  std::source_location status_base_location_of(
-      StatusBase const* status) const noexcept {
+  auto status_base_location_of(StatusBase const* status) const noexcept
+      -> std::source_location {
     return incidents_[incident_code_of(status)].location;
   }
 
-  int status_base_platform_error_of(StatusBase const* status) const noexcept {
+  auto status_base_platform_error_of(StatusBase const* status) const noexcept
+      -> int {
     return incidents_[incident_code_of(status)].platform_error;
   }
 
@@ -622,15 +647,15 @@ class EnumStatusKindDomain
  public:
   using StatusKindBuilderBase::StatusKindBuilderBase;
 
-  constexpr std::string_view status_kind_message_of(
-      StatusKind const* kind) const noexcept override {
+  constexpr auto status_kind_message_of(StatusKind const* kind) const noexcept
+      -> std::string_view override {
     return EnumStatusKindConditionMixin<
         ConditionEnumType, ConditionCount>::status_kind_message_of(kind);
   }
 
  private:
-  StatusKind handle_watch_kind(
-      ConditionEnumType condition) const noexcept final {
+  auto handle_watch_kind(ConditionEnumType condition) const noexcept
+      -> StatusKind final {
     return EnumStatusKindConditionMixin<ConditionEnumType,
                                         ConditionCount>::do_watch_kind(  //
         condition, this, this);
@@ -658,40 +683,41 @@ class EnumStatusDomain
  public:
   using StatusDomainBuilderBase::StatusDomainBuilderBase;
 
-  constexpr std::string_view status_kind_message_of(
-      StatusKind const* kind) const noexcept override {
+  constexpr auto status_kind_message_of(StatusKind const* kind) const noexcept
+      -> std::string_view override {
     return EnumStatusKindConditionMixin<
         ConditionEnumType, ConditionCount>::status_kind_message_of(kind);
   }
 
-  std::string_view status_base_message_of(
-      StatusBase const* status) const noexcept override {
+  auto status_base_message_of(StatusBase const* status) const noexcept
+      -> std::string_view override {
     return EnumStatusIncidentMixin<
         ConditionEnumType, IncidentCountMax>::status_base_message_of(status);
   }
 
-  std::source_location status_base_location_of(
-      StatusBase const* status) const noexcept override {
+  auto status_base_location_of(StatusBase const* status) const noexcept
+      -> std::source_location override {
     return EnumStatusIncidentMixin<
         ConditionEnumType, IncidentCountMax>::status_base_location_of(status);
   }
 
-  int status_base_platform_error_of(
-      StatusBase const* status) const noexcept override {
+  auto status_base_platform_error_of(StatusBase const* status) const noexcept
+      -> int override {
     return EnumStatusIncidentMixin<ConditionEnumType, IncidentCountMax>::
         status_base_platform_error_of(status);
   }
 
  private:
-  StatusKind handle_watch_kind(
-      ConditionEnumType condition) const noexcept final {
+  auto handle_watch_kind(ConditionEnumType condition) const noexcept
+      -> StatusKind final {
     return EnumStatusKindConditionMixin<ConditionEnumType,
                                         ConditionCount>::do_watch_kind(  //
         condition, this, this);
   }
 
-  Status handle_raise_incident(ConditionEnumType condition,
-                               StatusIncidentEntry entry) noexcept final {
+  auto handle_raise_incident(ConditionEnumType condition,
+                             StatusIncidentEntry entry) noexcept
+      -> Status final {
     return EnumStatusIncidentMixin<ConditionEnumType, IncidentCountMax>::
         do_raise_incident(condition, std::move(entry), this, this);
   }
@@ -702,8 +728,8 @@ class EnumStatusDomain
 template <typename ConditionEnumType,  //
           std::size_t ConditionCount,  //
           std::size_t IncidentCountMax = DEFAULT_INCIDENT_COUNT>
-EnumStatusDomain<ConditionEnumType, ConditionCount, IncidentCountMax>&
-static_enum_status_domain() noexcept {
+auto static_enum_status_domain() noexcept
+    -> EnumStatusDomain<ConditionEnumType, ConditionCount, IncidentCountMax>& {
   static std::size_t domain_code = allocate_static_increment();
   static EnumStatusDomain<ConditionEnumType, ConditionCount, IncidentCountMax>
       domain{domain_code,
@@ -718,8 +744,8 @@ static_enum_status_domain() noexcept {
 // so keep a detach_copy() of any Status that must outlive that thread.
 template <typename ConditionEnumType,  //
           std::size_t ConditionCount>
-EnumStatusDomain<ConditionEnumType, ConditionCount, 1u>&
-thread_local_enum_status_domain() noexcept {
+auto thread_local_enum_status_domain() noexcept
+    -> EnumStatusDomain<ConditionEnumType, ConditionCount, 1u>& {
   static const std::size_t domain_code = allocate_static_increment();
   thread_local EnumStatusDomain<ConditionEnumType, ConditionCount, 1u> domain{
       domain_code,
@@ -730,7 +756,8 @@ thread_local_enum_status_domain() noexcept {
 //------------------------------------------------------------------------------
 //
 template <typename ConditionEnumType>
-Status raise(ConditionEnumType condition, std::string message = {}) noexcept {
+auto raise(ConditionEnumType condition, std::string message = {}) noexcept
+    -> Status {
   return static_enum_status_domain<ConditionEnumType,
                                    static_cast<std::size_t>(
                                        ConditionEnumType::COUNT)>()
@@ -738,9 +765,9 @@ Status raise(ConditionEnumType condition, std::string message = {}) noexcept {
 }
 
 template <typename ConditionEnumType>
-Status raise_here(
-    ConditionEnumType condition, std::string message = {},
-    std::source_location location = std::source_location::current()) noexcept {
+auto raise_here(ConditionEnumType condition, std::string message = {},
+                std::source_location location =
+                    std::source_location::current()) noexcept -> Status {
   return static_enum_status_domain<ConditionEnumType,
                                    static_cast<std::size_t>(
                                        ConditionEnumType::COUNT)>()
@@ -748,7 +775,7 @@ Status raise_here(
 }
 
 template <typename ConditionEnumType>
-StatusKind watch(ConditionEnumType condition) noexcept {
+auto watch(ConditionEnumType condition) noexcept -> StatusKind {
   return static_enum_status_domain<ConditionEnumType,
                                    static_cast<std::size_t>(
                                        ConditionEnumType::COUNT)>()
@@ -758,8 +785,8 @@ StatusKind watch(ConditionEnumType condition) noexcept {
 //------------------------------------------------------------------------------
 //
 template <typename ConditionEnumType>
-Status raise_thread_local(ConditionEnumType condition,
-                          std::string message = {}) noexcept {
+auto raise_thread_local(ConditionEnumType condition,
+                        std::string message = {}) noexcept -> Status {
   return thread_local_enum_status_domain<ConditionEnumType,
                                          static_cast<std::size_t>(
                                              ConditionEnumType::COUNT)>()
@@ -767,9 +794,10 @@ Status raise_thread_local(ConditionEnumType condition,
 }
 
 template <typename ConditionEnumType>
-Status raise_here_thread_local(
+auto raise_here_thread_local(
     ConditionEnumType condition, std::string message = {},
-    std::source_location location = std::source_location::current()) noexcept {
+    std::source_location location = std::source_location::current()) noexcept
+    -> Status {
   return thread_local_enum_status_domain<ConditionEnumType,
                                          static_cast<std::size_t>(
                                              ConditionEnumType::COUNT)>()
@@ -777,7 +805,7 @@ Status raise_here_thread_local(
 }
 
 template <typename ConditionEnumType>
-StatusKind watch_thread_local(ConditionEnumType condition) noexcept {
+auto watch_thread_local(ConditionEnumType condition) noexcept -> StatusKind {
   return thread_local_enum_status_domain<ConditionEnumType,
                                          static_cast<std::size_t>(
                                              ConditionEnumType::COUNT)>()

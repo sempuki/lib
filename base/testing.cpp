@@ -13,21 +13,24 @@ constexpr const std::string_view result_marker{"\033[1;33m*\033[0m"};
 constexpr const std::string_view passed{"\033[1;32mPASSED\033[0m."};
 constexpr const std::string_view failed{"\033[1;31mFAILED\033[0m."};
 
-std::string SummaryReporter::getDescription() { return "Summary reporter"; }
+auto SummaryReporter::getDescription() -> std::string {
+  return "Summary reporter";
+}
 
-void SummaryReporter::testRunStarting(Catch::TestRunInfo const& info) {
+auto SummaryReporter::testRunStarting(Catch::TestRunInfo const& info) -> void {
   report_.emplace_back();
   report_.back() << test_marker << ' ' << info.name;
 }
 
-void SummaryReporter::testRunEnded(Catch::TestRunStats const& /*stats*/) {
+auto SummaryReporter::testRunEnded(Catch::TestRunStats const& /*stats*/)
+    -> void {
   std::cout << "\n\n**** Test Run Results. ****\n\n";
   for (auto&& line : report_) {
     std::cout << line.str() << "\n";
   }
 }
 
-void SummaryReporter::sectionStarting(Catch::SectionInfo const& info) {
+auto SummaryReporter::sectionStarting(Catch::SectionInfo const& info) -> void {
   depth_++;
   switch (depth_) {
     case 1:
@@ -44,7 +47,7 @@ void SummaryReporter::sectionStarting(Catch::SectionInfo const& info) {
   }
 }
 
-void SummaryReporter::sectionEnded(Catch::SectionStats const& stats) {
+auto SummaryReporter::sectionEnded(Catch::SectionStats const& stats) -> void {
   depth_--;
 
   auto& result = stats.assertions.allPassed() ? passed : failed;
@@ -61,8 +64,10 @@ void SummaryReporter::sectionEnded(Catch::SectionStats const& stats) {
   }
 }
 
-void SummaryReporter::assertionStarting(Catch::AssertionInfo const& /*info*/) {}
-void SummaryReporter::assertionEnded(Catch::AssertionStats const& /*stats*/) {}
+auto SummaryReporter::assertionStarting(Catch::AssertionInfo const& /*info*/)
+    -> void {}
+auto SummaryReporter::assertionEnded(Catch::AssertionStats const& /*stats*/)
+    -> void {}
 
 CATCH_REGISTER_LISTENER(SummaryReporter)
 

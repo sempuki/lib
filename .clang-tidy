@@ -1,0 +1,6 @@
+# Shared by every project that uses lib; simon and volcano symlink it.
+# Functions are written `auto f(X) -> Y`. Lambdas keep their deduced returns.
+Checks: '-*,modernize-use-trailing-return-type'
+WarningsAsErrors: 'modernize-use-trailing-return-type'
+CheckOptions:
+  modernize-use-trailing-return-type.TransformLambdas: none

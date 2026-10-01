@@ -16,16 +16,16 @@ namespace lib {
 struct SummaryReporter : Catch::EventListenerBase {
   using EventListenerBase::EventListenerBase;
 
-  static std::string getDescription();
+  static auto getDescription() -> std::string;
 
-  void testRunStarting(Catch::TestRunInfo const& info) override;
-  void testRunEnded(Catch::TestRunStats const& stats) override;
+  auto testRunStarting(Catch::TestRunInfo const& info) -> void override;
+  auto testRunEnded(Catch::TestRunStats const& stats) -> void override;
 
-  void sectionStarting(Catch::SectionInfo const& info) override;
-  void sectionEnded(Catch::SectionStats const& stats) override;
+  auto sectionStarting(Catch::SectionInfo const& info) -> void override;
+  auto sectionEnded(Catch::SectionStats const& stats) -> void override;
 
-  void assertionStarting(Catch::AssertionInfo const& info) override;
-  void assertionEnded(Catch::AssertionStats const& stats) override;
+  auto assertionStarting(Catch::AssertionInfo const& info) -> void override;
+  auto assertionEnded(Catch::AssertionStats const& stats) -> void override;
 
  private:
   std::size_t depth_ = 0;
