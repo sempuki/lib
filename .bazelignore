@@ -1,0 +1,2 @@
+# The clangd mirror, which bazel/mirror.py builds.
+.lsp
