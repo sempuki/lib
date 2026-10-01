@@ -50,16 +50,16 @@ so it builds with the same standard and warnings as lib.
 clangd needs a `compile_commands.json`, and the headers it names must stay put.
 Bazel's execution root does not: every build relinks it to only the external
 repositories that build needed, and switching compilers reconfigures it.
-`bazel/mirror.py` builds in an output base of its own, copies the headers
+`bazel/lsp_mirror.py` builds in an output base of its own, copies the headers
 clangd reads into `.lsp/mirror/`, and writes `compile_commands.json` against
 that mirror, so builds and compiler switches never disturb the editor. Ignore
 `.lsp/` in both `.gitignore` and `.bazelignore`, then from the workspace root:
 
 ```sh
-python3 bazel/mirror.py                  # in lib; 2nd_party/lib/bazel/mirror.py elsewhere
-python3 bazel/mirror.py --if-stale       # only if files or targets changed
-python3 bazel/mirror.py --watch 60       # check every minute, e.g. in a tmux pane
-python3 bazel/mirror.py --install-hooks  # refresh after checkout, merge, rebase
+python3 bazel/lsp_mirror.py                  # in lib; 2nd_party/lib/bazel/... elsewhere
+python3 bazel/lsp_mirror.py --if-stale       # only if files or targets changed
+python3 bazel/lsp_mirror.py --watch 60       # check every minute, e.g. in a tmux pane
+python3 bazel/lsp_mirror.py --install-hooks  # refresh after checkout, merge, rebase
 ```
 
 `--if-stale` takes a fraction of a second when nothing changed, so it is cheap

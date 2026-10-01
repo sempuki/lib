@@ -5,8 +5,8 @@
 
 Run it from the root of any workspace that uses lib:
 
-    python3 bazel/mirror.py                  # in lib: refresh now
-    python3 2nd_party/lib/bazel/mirror.py    # in simon or volcano
+    python3 bazel/lsp_mirror.py                  # in lib: refresh now
+    python3 2nd_party/lib/bazel/lsp_mirror.py    # in simon or volcano
 
     ... --if-stale       # refresh only if out of date
     ... --watch 60       # check every 60 s, forever
@@ -322,7 +322,7 @@ def refresh_if_stale(targets: list[str], force: bool) -> None:
         STAMP.write_text(fingerprint())
 
 
-HOOK_MARK = "Installed by lib's bazel/mirror.py --install-hooks"
+HOOK_MARK = "Installed by lib's bazel/lsp_mirror.py --install-hooks"
 HOOK = """#!/bin/sh
 # {mark}: refreshes the clangd mirror
 # in the background when this checkout changes.

@@ -37,8 +37,8 @@ bazel-*
 # Local Bazel overrides
 user.bazelrc
 
-# Generated for clangd by bazel/mirror.py in lib
+# Generated for clangd by bazel/lsp_mirror.py in lib
 compile_commands.json
 
-# The clangd mirror: bazel/mirror.py
+# The clangd mirror: bazel/lsp_mirror.py
 .lsp/
