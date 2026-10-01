@@ -3,8 +3,11 @@
 #include "base/core.hpp"
 
 #include <cstdint>
+#include <expected>
 #include <limits>
+#include <memory>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 
 #include "base/testing.hpp"
@@ -30,6 +33,74 @@ TEST_CASE("NarrowCast") {
     REQUIRE_THROWS_AS(
         narrow_cast<std::int32_t>(std::numeric_limits<std::uint32_t>::max()),
         std::logic_error);
+  }
+}
+
+namespace {
+
+std::expected<int, std::string> half_of(int value) {
+  if (value % 2 != 0) {
+    return std::unexpected("odd");
+  }
+  return value / 2;
+}
+
+std::expected<std::unique_ptr<int>, std::string> boxed(int value) {
+  if (value < 0) {
+    return std::unexpected("negative");
+  }
+  return std::make_unique<int>(value);
+}
+
+// Halves twice, declaring each result.
+std::expected<int, std::string> quarter_of(int value) {
+  ASSIGN_OR_RETURN(int half, half_of(value));
+  ASSIGN_OR_RETURN(int quarter, half_of(half));
+  return quarter;
+}
+
+// Checks without keeping the value, then assigns an existing variable.
+std::expected<int, std::string> checked_half_of(int value) {
+  RETURN_IF_UNEXPECTED(half_of(value));
+  int half = 0;
+  ASSIGN_OR_RETURN(half, half_of(value));
+  return half;
+}
+
+std::expected<int, std::string> unboxed(int value) {
+  ASSIGN_OR_RETURN(std::unique_ptr<int> box, boxed(value));
+  return *box;
+}
+
+std::expected<void, std::string> check_even(int value, bool skip) {
+  if (skip)
+    RETURN_IF_UNEXPECTED(half_of(value))
+  else {
+    return std::unexpected("skipped");
+  }
+  return {};
+}
+
+}  // namespace
+
+TEST_CASE("PropagateErrors") {
+  SECTION("ShouldReturnValueGivenEveryStepSucceeds") {
+    CHECK(quarter_of(8) == 2);
+    CHECK(checked_half_of(6) == 3);
+    CHECK(unboxed(5) == 5);
+  }
+
+  SECTION("ShouldReturnFirstErrorGivenAStepFails") {
+    CHECK(quarter_of(6).error() == "odd");  // 6 halves to 3, which is odd.
+    CHECK(quarter_of(5).error() == "odd");
+    CHECK(checked_half_of(3).error() == "odd");
+    CHECK(unboxed(-1).error() == "negative");
+  }
+
+  SECTION("ShouldTakeOuterElseGivenFalseOuterIf") {
+    CHECK(check_even(4, true).has_value());
+    CHECK(check_even(3, true).error() == "odd");
+    CHECK(check_even(4, false).error() == "skipped");
   }
 }
 
