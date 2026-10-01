@@ -4,8 +4,10 @@
 
 #include <cstdint>
 #include <expected>
+#include <format>
 #include <limits>
 #include <memory>
+#include <source_location>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -104,6 +106,35 @@ TEST_CASE("PropagateErrors") {
   }
 }
 
+namespace {
+struct Base {
+  int base = 1;
+};
+struct Derived final : Base {};
+struct Left {
+  int left = 2;
+};
+struct Both final : Left, Base {};
+}  // namespace
+
+TEST_CASE("CheckedPointerConversion") {
+  SECTION("ShouldStayUnusedGivenUpcastOfUnusedOut") {
+    Out<Derived> derived{unused};
+    Out<Base> base{derived};
+
+    REQUIRE_FALSE(base);
+  }
+
+  SECTION("ShouldPointAtBaseSubobjectGivenUpcast") {
+    Both both;
+    InOut<Both> whole{both};
+    InOut<Base> part{whole};
+
+    REQUIRE(&*part == static_cast<Base*>(&both));
+    REQUIRE(part->base == 1);
+  }
+}
+
 TEST_CASE("CheckContract") {
   SECTION("ShouldThrowWithConditionTextGivenFalseCondition") {
     try {
@@ -112,6 +143,18 @@ TEST_CASE("CheckContract") {
     } catch (const std::logic_error& e) {
       REQUIRE(std::string_view{e.what()}.contains("Precondition"));
       REQUIRE(std::string_view{e.what()}.contains("1 + 1 == 3"));
+    }
+  }
+
+  SECTION("ShouldReportCallerLineGivenFalseCondition") {
+    std::uint_least32_t line = 0;
+    try {
+      line = std::source_location::current().line() + 1;
+      CHECK_INVARIANT(false);
+      FAIL("CHECK_INVARIANT did not throw");
+    } catch (const std::logic_error& e) {
+      REQUIRE(std::string_view{e.what()}.contains(
+          std::format("core_test.cpp:{}", line)));
     }
   }
 
@@ -188,6 +231,17 @@ TEST_CASE("StableHash") {
 
   SECTION("ShouldDifferGivenDifferentTails") {
     REQUIRE(stable_hash("abcdefghijk1") != stable_hash("abcdefghijk2"));
+  }
+
+  SECTION("ShouldMatchKnownValueGivenFixedInputs") {
+    // The same on every platform: these were computed with both signed and
+    // unsigned char. Blocks are eight bytes; the last check has a byte over
+    // 0x7f.
+    CHECK(stable_hash("") == 0xeee234c470228e5dULL);
+    CHECK(stable_hash("abcdefgh") == 0x2d4c755f42e53ab5ULL);
+    CHECK(stable_hash("abcdefghi") == 0xacdf21f24794b3a7ULL);
+    CHECK(stable_hash("/world/1/entity/2") == 0x1009c5a7c6933fafULL);
+    CHECK(stable_hash("\xff") == 0x0e186611ec97e975ULL);
   }
 }
 

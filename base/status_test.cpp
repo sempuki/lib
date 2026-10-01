@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <sstream>
+#include <thread>
 
 #include "base/testing.hpp"
 
@@ -143,6 +144,13 @@ TEST_CASE("StatusCode") {
 
     // Postconditions.
     REQUIRE(pass);
+  }
+
+  SECTION("ShouldRestoreStreamFlagsGivenOutputOperator") {
+    std::ostringstream out;
+    out << StatusCode{1u, 2u, 3u} << ' ' << 255;
+
+    REQUIRE(out.str().ends_with(" 255"));
   }
 }
 
@@ -333,7 +341,7 @@ TEST_CASE("Status") {
     REQUIRE(detached.location().line() == status.location().line());
   }
 
-  SECTION("ShouldHaveSameLocationAsDetachedCopy") {
+  SECTION("ShouldHaveSamePlatformErrorAsDetachedCopy") {
     // Postconditions.
     REQUIRE(detached.platform_error() == status.platform_error());
   }
@@ -500,12 +508,29 @@ constexpr bool StatusKindShouldCompareDifferent() {
 }
 
 TEST_CASE("EnumStatusKindDomain") {
+  // watch_kind goes through a virtual call, so these run at runtime.
+  SECTION("ShouldHaveSameMessageAndCompareGivenWatchedKinds") {
+    REQUIRE(StatusKindShouldHaveSameMessage());
+    REQUIRE(StatusKindShouldCompareSame());
+    REQUIRE(StatusKindShouldCompareDifferent());
+  }
+
   SECTION("ShouldHaveConstexprName") {
     // Under Test.
     constexpr std::string_view name = quarks.name();
 
     // Postconditions.
     REQUIRE(name == "quark");
+  }
+}
+
+TEST_CASE("StatusEquivalence") {
+  SECTION("ShouldBeEquivalentGivenStatusWithSameConditionDifferentIncident") {
+    Status first = raise(Quark::TOP);
+    Status second = raise(Quark::TOP);
+
+    REQUIRE(first.has_equivalent_condition_as(second));
+    REQUIRE_FALSE(first.has_equivalent_condition_as(raise(Quark::CHARM)));
   }
 }
 
@@ -568,6 +593,25 @@ TEST_CASE("StaticEnumStatusDomain") {
 }
 
 TEST_CASE("ThreadLocalEnumStatusDomain") {
+  SECTION("ShouldMatchKindGivenStatusRaisedOnAnotherThread") {
+    // The domain's identity is shared; only its incident storage is per
+    // thread.
+    StatusKind watched = watch_thread_local(Quark::TOP);
+    StatusKind other_condition = watch_thread_local(Quark::CHARM);
+    bool same_condition_matches = false;
+    bool other_condition_differs = false;
+
+    std::thread raiser{[&] {
+      Status raised = raise_thread_local(Quark::TOP);
+      same_condition_matches = raised.kind() == watched;
+      other_condition_differs = raised.kind() != other_condition;
+    }};
+    raiser.join();
+
+    REQUIRE(same_condition_matches);
+    REQUIRE(other_condition_differs);
+  }
+
   SECTION("ShouldRaiseStatusFromDifferentDomain") {
     // Preconditions.
     Status other = domain.raise_status(Quark::TOP);
@@ -638,6 +682,10 @@ TEST_CASE("StaticEnumStatusDomainIncidentCount") {
 }
 
 TEST_CASE("StatusKindDefault") {
+  SECTION("ShouldNotEqualAnyRaisedStatusGivenDefaultKind") {
+    REQUIRE(StatusKind{} != raise(Quark::TOP).kind());
+  }
+
   SECTION("ShouldHaveEmptyMessageGivenDefaultConstruction") {
     // Under Test.
     StatusKind kind;

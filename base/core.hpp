@@ -50,20 +50,6 @@
   constexpr class_name__(class_name__&&) noexcept = default; \
   constexpr class_name__& operator=(class_name__&&) noexcept = default;
 
-#define DEFINE_MOVE_FROM_SWAP(class_name__)               \
-  class_name__(class_name__&& that) noexcept {            \
-    using std::swap;                                      \
-    swap(*this, that);                                    \
-  }                                                       \
-  class_name__& operator=(class_name__&& that) noexcept { \
-    if (this != &that) {                                  \
-      using std::swap;                                    \
-      class_name__ temp{std::move(that)};                 \
-      swap(*this, temp);                                  \
-    }                                                     \
-    return *this;                                         \
-  }
-
 #define DERIVE_FINAL_WITH_CONSTRUCTORS(derived_name__, base_name__) \
   class derived_name__ final : public base_name__ {                 \
    public:                                                          \
@@ -135,7 +121,9 @@ namespace lib::internal {
 namespace lib {
 
 inline std::size_t allocate_static_increment() {
-  static std::atomic<std::size_t> increment = 0;
+  // Starts at 1, so 0 always means "none", such as a default StatusKind's
+  // domain.
+  static std::atomic<std::size_t> increment = 1;
   return increment++;
 }
 
@@ -158,7 +146,7 @@ class CheckedPointer {
   explicit CheckedPointer(Type& value) : arg_{&value} {}
   template <typename Derived>
     requires(std::is_base_of_v<Type, Derived> && !std::is_same_v<Type, Derived>)
-  CheckedPointer(CheckedPointer<Derived> that) : arg_{that.get()} {}
+  CheckedPointer(CheckedPointer<Derived> that) : arg_{that.arg_} {}
 
   explicit operator bool() const { return arg_; }
 
@@ -176,6 +164,10 @@ class CheckedPointer {
   }
 
  protected:
+  // A null pointer upcasts to null, so an unused Out stays unused.
+  template <typename>
+  friend class CheckedPointer;
+
   Type* arg_ = nullptr;
 };
 
@@ -305,7 +297,7 @@ void dump_object_bytes(const ObjectType& object) {
   auto* begin_address = reinterpret_cast<const char*>(std::addressof(object));
   auto* end_address = reinterpret_cast<const char*>(std::addressof(object) + 1);
   for (; begin_address != end_address; ++begin_address) {
-    std::print("{:02x} ", *begin_address);
+    std::print("{:02x} ", static_cast<unsigned char>(*begin_address));
   }
   std::print("\n");
 }
@@ -334,13 +326,21 @@ inline std::size_t stable_hash(std::string_view str) {
   std::uint64_t block;
   std::uint64_t result = diffuse_(str.size(), m1, m2);
 
+  // Bytes are read as unsigned and blocks assembled little-endian, so the
+  // hash is the same whether char is signed and whatever the byte order.
+  auto byte_at = [&](std::size_t at) {
+    return static_cast<std::uint64_t>(static_cast<unsigned char>(str[at]));
+  };
   for (; i + block_size <= str.size(); i += block_size) {
-    std::memcpy(&block, str.data() + i, block_size);
+    block = 0;
+    for (std::size_t b = 0; b < block_size; ++b) {
+      block |= byte_at(i + b) << (8 * b);
+    }
     result = shuffle_(result) ^ diffuse_(block, ~m2, m3);
   }
 
   for (; i < str.size(); i++) {
-    result = shuffle_(result) ^ diffuse_(str[i], m3, ~m1);
+    result = shuffle_(result) ^ diffuse_(byte_at(i), m3, ~m1);
   }
 
   return diffuse_(result, m2, ~m3);

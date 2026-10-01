@@ -129,8 +129,11 @@ class StatusCode final {
     return lhs.bits_ < rhs.bits_;
   }
 
+  // In hex, leaving the stream's format as it was.
   friend std::ostream& operator<<(std::ostream& out, StatusCode self) noexcept {
+    std::ios_base::fmtflags flags = out.flags();
     out << std::hex << self.bits_;
+    out.flags(flags);
     return out;
   }
 };
@@ -412,8 +415,10 @@ class Status final : public StatusBase {
     return internal::make_status_detached(status_code_, domain_);
   }
 
+  // Compares conditions, not incidents: two raises of one condition match.
   bool has_equivalent_condition_as(Status that) const noexcept {
-    return *this == that || domain_->has_equivalent_condition_of(this, &that);
+    return kind() == that.kind() ||
+           domain_->has_equivalent_condition_of(this, &that);
   }
 
   bool has_equivalent_condition_as(StatusKind that) const noexcept {
@@ -706,11 +711,16 @@ static_enum_status_domain() noexcept {
   return domain;
 }
 
+// A domain whose identity is shared by every thread, and whose incident
+// storage (each raise's message and location) is each thread's own, so raising
+// needs no lock. Statuses of one condition compare equal whichever thread
+// raised them. A Status reads its message from the raising thread's storage,
+// so keep a detach_copy() of any Status that must outlive that thread.
 template <typename ConditionEnumType,  //
           std::size_t ConditionCount>
 EnumStatusDomain<ConditionEnumType, ConditionCount, 1u>&
 thread_local_enum_status_domain() noexcept {
-  thread_local std::size_t domain_code = allocate_static_increment();
+  static const std::size_t domain_code = allocate_static_increment();
   thread_local EnumStatusDomain<ConditionEnumType, ConditionCount, 1u> domain{
       domain_code,
       std::format("thread_local_enum_status_domain_{}", domain_code)};

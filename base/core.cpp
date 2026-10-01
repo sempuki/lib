@@ -20,8 +20,8 @@ namespace internal {
 void do_contract_failure(const char* kind, const char* condition,
                          std::source_location location) {
   throw std::logic_error(
-      std::format("[{}] {} Failed {}: {}", location.file_name(),
-                  location.function_name(), kind, condition));
+      std::format("[{}:{}] {} Failed {}: {}", location.file_name(),
+                  location.line(), location.function_name(), kind, condition));
 }
 
 }  // namespace internal
