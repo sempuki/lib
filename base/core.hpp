@@ -73,15 +73,28 @@
 #define DECLARE_USED(expression__) ((void)(sizeof(expression__)))
 #define DECLARE_UNUSED(expression__) ((void)(sizeof(expression__)))
 
+namespace lib::internal {
+
+// Throws for a failed contract check. Out of line and cold, so each check site
+// is only a compare and a call, which keeps small checked functions (such as
+// CheckedPointer::operator->) cheap enough for every compiler to inline. The
+// default argument captures the caller's location.
+[[noreturn, gnu::cold, gnu::noinline]] inline void do_contract_failure(
+    const char* kind, const char* condition,
+    std::source_location location = std::source_location::current()) {
+  throw std::logic_error(
+      std::format("[{}] {} Failed {}: {}", location.file_name(),
+                  location.function_name(), kind, condition));
+}
+
+}  // namespace lib::internal
+
 // The empty then-branch closes the `if`, so a trailing `else` at the call site
 // binds to the caller's `if` instead of this one.
-#define CHECK_CONTRACT__(condition__, kind__)                        \
-  if (condition__) {                                                 \
-  } else [[unlikely]] {                                              \
-    const auto current_location__ = std::source_location::current(); \
-    throw std::logic_error(std::format(                              \
-        "[{}] {} Failed {}: {}", current_location__.file_name(),     \
-        current_location__.function_name(), kind__, #condition__));  \
+#define CHECK_CONTRACT__(condition__, kind__)                   \
+  if (condition__) {                                            \
+  } else [[unlikely]] {                                         \
+    ::lib::internal::do_contract_failure(kind__, #condition__); \
   }
 
 #define CHECK_PRECONDITION(precondition__) \

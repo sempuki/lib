@@ -242,14 +242,14 @@ class StatusDomainBuilderBase : public StatusKindBuilderInterface,
   std::string name_;
 };
 
-namespace impl {
+namespace internal {
 Status make_status(  //
     StatusCode, StatusDomainInterface const*) noexcept;
 StatusDetached make_status_detached(  //
     StatusCode, StatusDomainInterface const*) noexcept;
 constexpr StatusKind make_status_kind(  //
     StatusCode, StatusKindInspectInterface const*) noexcept;
-}  // namespace impl
+}  // namespace internal
 
 constexpr std::size_t domain_code_of(StatusKind const*) noexcept;
 constexpr std::size_t domain_code_of(StatusBase const*) noexcept;
@@ -285,7 +285,7 @@ class StatusKind final {
 
   friend class StatusBase;
 
-  friend constexpr StatusKind impl::make_status_kind(
+  friend constexpr StatusKind internal::make_status_kind(
       StatusCode, StatusKindInspectInterface const*) noexcept;
 
   friend constexpr std::size_t domain_code_of(StatusKind const*) noexcept;
@@ -373,7 +373,7 @@ class StatusDetached final : public StatusBase {
 
   StatusIncidentEntry entry_;
 
-  friend StatusDetached impl::make_status_detached(  //
+  friend StatusDetached internal::make_status_detached(  //
       StatusCode, StatusDomainInterface const*) noexcept;
 
   friend std::ostream& operator<<(std::ostream& out,
@@ -405,11 +405,11 @@ class Status final : public StatusBase {
   }
 
   StatusKind kind() const noexcept {
-    return impl::make_status_kind(status_code_, domain_);
+    return internal::make_status_kind(status_code_, domain_);
   }
 
   StatusDetached detach_copy() const noexcept {
-    return impl::make_status_detached(status_code_, domain_);
+    return internal::make_status_detached(status_code_, domain_);
   }
 
   bool has_equivalent_condition_as(Status that) const noexcept {
@@ -426,7 +426,7 @@ class Status final : public StatusBase {
 
   StatusDomainInterface const* domain_ = nullptr;
 
-  friend Status impl::make_status(  //
+  friend Status internal::make_status(  //
       StatusCode, const StatusDomainInterface*) noexcept;
 
   friend std::ostream& operator<<(std::ostream& out, Status self) noexcept {
@@ -437,7 +437,7 @@ class Status final : public StatusBase {
 
 //------------------------------------------------------------------------------
 //
-namespace impl {
+namespace internal {
 inline Status make_status(  //
     StatusCode code, const StatusDomainInterface* domain) noexcept {
   return Status{code, domain};
@@ -452,7 +452,7 @@ inline constexpr StatusKind make_status_kind(  //
     StatusCode code, StatusKindInspectInterface const* domain) noexcept {
   return StatusKind{code, domain};
 }
-}  // namespace impl
+}  // namespace internal
 
 inline constexpr std::size_t domain_code_of(StatusKind const* self) noexcept {
   return self->kind_code_.domain_bits();
@@ -494,7 +494,7 @@ class EnumStatusKindConditionMixin {
       StatusKindBuilderInterface const* builder,  //
       StatusKindInspectInterface const* domain) const noexcept {
     auto condition_code = static_cast<std::size_t>(condition);
-    return impl::make_status_kind(
+    return internal::make_status_kind(
         builder->make_status_kind_code(condition_code), domain);
   }
 
@@ -582,7 +582,7 @@ class EnumStatusIncidentMixin {
     incidents_[current] = std::move(entry);
 
     auto condition_code = static_cast<std::size_t>(condition);
-    return impl::make_status(
+    return internal::make_status(
         builder->make_status_base_code(condition_code, current), domain);
   }
 

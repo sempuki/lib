@@ -5,9 +5,9 @@
 namespace lib {
 
 template <>
-const std::array<StatusConditionEntry, impl::POSIX_CONDITION_COUNT>
-    EnumStatusKindConditionMixin<PosixError,
-                                 impl::POSIX_CONDITION_COUNT>::conditions_ = {
+const std::array<StatusConditionEntry, internal::POSIX_CONDITION_COUNT>
+    EnumStatusKindConditionMixin<
+        PosixError, internal::POSIX_CONDITION_COUNT>::conditions_ = {
         StatusConditionEntry{"Argument list too long."},
         StatusConditionEntry{"Permission denied."},
         StatusConditionEntry{"Address in use."},
@@ -94,9 +94,9 @@ const std::array<StatusConditionEntry, impl::POSIX_CONDITION_COUNT>
 };
 
 template <>
-const std::array<StatusConditionEntry, impl::WIN32_CONDITION_COUNT>
-    EnumStatusKindConditionMixin<Win32Error,
-                                 impl::WIN32_CONDITION_COUNT>::conditions_ = {
+const std::array<StatusConditionEntry, internal::WIN32_CONDITION_COUNT>
+    EnumStatusKindConditionMixin<
+        Win32Error, internal::WIN32_CONDITION_COUNT>::conditions_ = {
         StatusConditionEntry{"ERROR_INVALID_FUNCTION"},
         StatusConditionEntry{"ERROR_FILE_NOT_FOUND"},
         StatusConditionEntry{"ERROR_PATH_NOT_FOUND"},

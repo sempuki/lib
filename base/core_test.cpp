@@ -44,6 +44,15 @@ TEST_CASE("CheckContract") {
     }
   }
 
+  SECTION("ShouldReportCallerLocationGivenFalseCondition") {
+    try {
+      CHECK_INVARIANT(false);
+      FAIL("CHECK_INVARIANT did not throw");
+    } catch (const std::logic_error& e) {
+      REQUIRE(std::string_view{e.what()}.contains("core_test.cpp"));
+    }
+  }
+
   SECTION("ShouldTakeOuterElseGivenFalseOuterIf") {
     // The `else` must bind to the outer `if`, not the one inside the macro.
     bool took_else = false;
