@@ -24,7 +24,6 @@
 #include <utility>
 
 #ifdef __GNUC__  // Clang also supports this header.
-#include <cxxabi.h>
 #endif
 
 #define DECLARE_COPY_DEFAULT(class_name__)              \
@@ -80,13 +79,9 @@ namespace lib::internal {
 // is only a compare and a call, which keeps small checked functions (such as
 // CheckedPointer::operator->) cheap enough for every compiler to inline. The
 // default argument captures the caller's location.
-[[noreturn, gnu::cold, gnu::noinline]] inline void do_contract_failure(
+[[noreturn, gnu::cold, gnu::noinline]] void do_contract_failure(
     const char* kind, const char* condition,
-    std::source_location location = std::source_location::current()) {
-  throw std::logic_error(
-      std::format("[{}] {} Failed {}: {}", location.file_name(),
-                  location.function_name(), kind, condition));
-}
+    std::source_location location = std::source_location::current());
 
 }  // namespace lib::internal
 
@@ -290,18 +285,9 @@ void invoke_with_continuation(ContinuationType&& continuation,
 
 struct Empty final {};
 
-#if defined(__GNUC__)  // Clang also supports this header.
-inline std::string demangle(const std::string& name) {
-  // Let __cxa_demangle allocate, since it may realloc() any buffer it is given.
-  int out_status = 0;
-  std::unique_ptr<char, decltype(&std::free)> demangled{
-      abi::__cxa_demangle(name.c_str(), nullptr, nullptr, &out_status),
-      &std::free};
-  return (out_status == 0 && demangled) ? std::string{demangled.get()} : name;
-}
-#else
-inline std::string demangle(const std::string& name) { return name; }
-#endif
+// The readable form of a mangled type name, or the name itself if it cannot be
+// demangled.
+std::string demangle(const std::string& name);
 
 template <typename Type>
 std::string to_type_string() {
