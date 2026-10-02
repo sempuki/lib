@@ -91,8 +91,8 @@ namespace lib::internal {
 // function must return a std::expected whose error type the error converts to.
 //
 //   RETURN_IF_UNEXPECTED(build_world(scenario, Out(world)));
-//   ASSIGN_OR_RETURN(Entity asset, build_scenario(scenario, InOut(world)));
-//   ASSIGN_OR_RETURN(asset_, build_scenario(scenario, InOut(world)));
+//   RETURN_OR_ASSIGN(Entity asset, build_scenario(scenario, InOut(world)));
+//   RETURN_OR_ASSIGN(asset_, build_scenario(scenario, InOut(world)));
 
 // Returns the error of `expression__`, a std::expected, if it has one.
 #define RETURN_IF_UNEXPECTED(expression__)                      \
@@ -105,11 +105,11 @@ namespace lib::internal {
 // otherwise moves its value into `target__`, an existing variable or a new
 // declaration such as `Entity asset`. It is several statements, so use it only
 // where a statement can go, at most once per line.
-#define ASSIGN_OR_RETURN(target__, expression__)                               \
-  ASSIGN_OR_RETURN_INNER__(CONCATENATE__(result_on_line_, __LINE__), target__, \
+#define RETURN_OR_ASSIGN(target__, expression__)                               \
+  RETURN_OR_ASSIGN_INNER__(CONCATENATE__(result_on_line_, __LINE__), target__, \
                            expression__)
 
-#define ASSIGN_OR_RETURN_INNER__(result__, target__, expression__) \
+#define RETURN_OR_ASSIGN_INNER__(result__, target__, expression__) \
   auto&& result__ = (expression__);                                \
   if (!result__.has_value()) [[unlikely]] {                        \
     return std::unexpected(std::move(result__).error());           \

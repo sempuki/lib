@@ -56,8 +56,8 @@ auto boxed(int value) -> std::expected<std::unique_ptr<int>, std::string> {
 
 // Halves twice, declaring each result.
 auto quarter_of(int value) -> std::expected<int, std::string> {
-  ASSIGN_OR_RETURN(int half, half_of(value));
-  ASSIGN_OR_RETURN(int quarter, half_of(half));
+  RETURN_OR_ASSIGN(int half, half_of(value));
+  RETURN_OR_ASSIGN(int quarter, half_of(half));
   return quarter;
 }
 
@@ -65,12 +65,12 @@ auto quarter_of(int value) -> std::expected<int, std::string> {
 auto checked_half_of(int value) -> std::expected<int, std::string> {
   RETURN_IF_UNEXPECTED(half_of(value));
   int half = 0;
-  ASSIGN_OR_RETURN(half, half_of(value));
+  RETURN_OR_ASSIGN(half, half_of(value));
   return half;
 }
 
 auto unboxed(int value) -> std::expected<int, std::string> {
-  ASSIGN_OR_RETURN(std::unique_ptr<int> box, boxed(value));
+  RETURN_OR_ASSIGN(std::unique_ptr<int> box, boxed(value));
   return *box;
 }
 
