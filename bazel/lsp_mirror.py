@@ -250,7 +250,11 @@ def cc_targets(targets: list[str]) -> list[str]:
 def refresh(targets: list[str]) -> None:
     LSP.mkdir(exist_ok=True)
     labels = cc_targets(targets)
-    bazel("build", *BAZEL_FLAGS, *labels, capture=False)  # Generated headers.
+    # Generated headers. The workspace's bazel-bin and its siblings stay the
+    # user's: a mirror build that took them would leave a debug binary where
+    # the user expects their own.
+    bazel("build", *BAZEL_FLAGS, "--experimental_convenience_symlinks=ignore",
+          *labels, capture=False)
     execution_root = pathlib.Path(bazel("info", *BAZEL_FLAGS, "execution_root").strip())
     # Dependencies too, for the sources of local repositories such as lib;
     # fetched repositories' sources are skipped below.
