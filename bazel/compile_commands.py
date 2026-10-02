@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # Copyright 2022 -- CONTRIBUTORS. See LICENSE.
 
-"""Superseded by lsp_mirror.py, which this runs, so old instructions work.
+"""Runs lsp_mirror.py, under another name.
 
-This used to point compile_commands.json into Bazel's execution root, which
-every build relinks to only the external repositories it needed; clangd lost
-headers whenever a partial build or a compiler switch ran. lsp_mirror.py
-writes it against a mirror outside Bazel's reach instead. See README's editor
-setup.
+lsp_mirror.py writes compile_commands.json against a mirror of the headers
+outside Bazel's reach. See README's editor setup.
 """
 
 import pathlib
