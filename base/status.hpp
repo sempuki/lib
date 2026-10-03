@@ -101,8 +101,6 @@ class StatusCode final {
   }
 
  private:
-  std::uint64_t bits_ = 0;
-
   constexpr static std::uint64_t DOMAIN_MASK = 0x0000'FFFF'0000'0000;
   constexpr static std::uint64_t DOMAIN_SIZE = 16;
   constexpr static std::uint64_t DOMAIN_SHIFT = 32;
@@ -139,6 +137,8 @@ class StatusCode final {
     out.flags(flags);
     return out;
   }
+
+  std::uint64_t bits_ = 0;
 };
 
 //==============================================================================
@@ -289,9 +289,6 @@ class StatusKind final {
                                 StatusKindInspectInterface const* domain)
       : kind_code_{code}, domain_{domain} {}
 
-  StatusCode kind_code_;
-  StatusKindInspectInterface const* domain_ = nullptr;
-
   friend class StatusBase;
 
   friend constexpr auto internal::make_status_kind(
@@ -317,6 +314,9 @@ class StatusKind final {
     out << self.message();
     return out;
   }
+
+  StatusCode kind_code_;
+  StatusKindInspectInterface const* domain_ = nullptr;
 };
 
 //==============================================================================
@@ -340,8 +340,6 @@ class StatusBase {
  protected:
   explicit StatusBase(StatusCode code) : status_code_{code} {}
 
-  StatusCode status_code_;
-
   friend constexpr auto domain_code_of(StatusBase const*) noexcept
       -> std::size_t;
   friend constexpr auto condition_code_of(StatusBase const*) noexcept
@@ -364,6 +362,8 @@ class StatusBase {
   friend auto operator<(StatusBase lhs, StatusBase rhs) noexcept -> bool {
     return lhs.status_code_ < rhs.status_code_;
   }
+
+  StatusCode status_code_;
 };
 
 //==============================================================================
@@ -390,8 +390,6 @@ class StatusDetached final : public StatusBase {
     entry_.platform_error = domain->status_base_platform_error_of(this);
   }
 
-  StatusIncidentEntry entry_;
-
   friend auto internal::make_status_detached(  //
       StatusCode, StatusDomainInterface const*) noexcept -> StatusDetached;
 
@@ -400,6 +398,8 @@ class StatusDetached final : public StatusBase {
     out << self.message();
     return out;
   }
+
+  StatusIncidentEntry entry_;
 };
 
 //==============================================================================
@@ -445,8 +445,6 @@ class Status final : public StatusBase {
   explicit Status(StatusCode code, StatusDomainInterface const* domain)
       : StatusBase{code}, domain_{domain} {}
 
-  StatusDomainInterface const* domain_ = nullptr;
-
   friend auto internal::make_status(  //
       StatusCode, const StatusDomainInterface*) noexcept -> Status;
 
@@ -455,6 +453,8 @@ class Status final : public StatusBase {
     out << self.message();
     return out;
   }
+
+  StatusDomainInterface const* domain_ = nullptr;
 };
 
 //------------------------------------------------------------------------------
