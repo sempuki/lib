@@ -40,7 +40,7 @@ TEST_CASE("NarrowCast") {
 
 namespace {
 
-auto half_of(int value) -> std::expected<int, std::string> {
+auto halve(int value) -> std::expected<int, std::string> {
   if (value % 2 != 0) {
     return std::unexpected("odd");
   }
@@ -55,17 +55,17 @@ auto boxed(int value) -> std::expected<std::unique_ptr<int>, std::string> {
 }
 
 // Halves twice, declaring each result.
-auto quarter_of(int value) -> std::expected<int, std::string> {
-  RETURN_OR_ASSIGN(int half, half_of(value));
-  RETURN_OR_ASSIGN(int quarter, half_of(half));
+auto halve_twice(int value) -> std::expected<int, std::string> {
+  RETURN_OR_ASSIGN(int half, halve(value));
+  RETURN_OR_ASSIGN(int quarter, halve(half));
   return quarter;
 }
 
 // Checks without keeping the value, then assigns an existing variable.
-auto checked_half_of(int value) -> std::expected<int, std::string> {
-  RETURN_IF_UNEXPECTED(half_of(value));
+auto checked_halve(int value) -> std::expected<int, std::string> {
+  RETURN_IF_UNEXPECTED(halve(value));
   int half = 0;
-  RETURN_OR_ASSIGN(half, half_of(value));
+  RETURN_OR_ASSIGN(half, halve(value));
   return half;
 }
 
@@ -76,7 +76,7 @@ auto unboxed(int value) -> std::expected<int, std::string> {
 
 auto check_even(int value, bool skip) -> std::expected<void, std::string> {
   if (skip)
-    RETURN_IF_UNEXPECTED(half_of(value))
+    RETURN_IF_UNEXPECTED(halve(value))
   else {
     return std::unexpected("skipped");
   }
@@ -87,15 +87,15 @@ auto check_even(int value, bool skip) -> std::expected<void, std::string> {
 
 TEST_CASE("PropagateErrors") {
   SECTION("ShouldReturnValueGivenEveryStepSucceeds") {
-    CHECK(quarter_of(8) == 2);
-    CHECK(checked_half_of(6) == 3);
+    CHECK(halve_twice(8) == 2);
+    CHECK(checked_halve(6) == 3);
     CHECK(unboxed(5) == 5);
   }
 
   SECTION("ShouldReturnFirstErrorGivenAStepFails") {
-    CHECK(quarter_of(6).error() == "odd");  // 6 halves to 3, which is odd.
-    CHECK(quarter_of(5).error() == "odd");
-    CHECK(checked_half_of(3).error() == "odd");
+    CHECK(halve_twice(6).error() == "odd");  // 6 halves to 3, which is odd.
+    CHECK(halve_twice(5).error() == "odd");
+    CHECK(checked_halve(3).error() == "odd");
     CHECK(unboxed(-1).error() == "negative");
   }
 
