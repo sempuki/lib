@@ -9,7 +9,6 @@ and [simon](https://github.com/sempuki/simon). Everything lives in `namespace li
 | `@lib//base:contract` | `EXPECT`/`ENSURE`/`ASSERT` macros throwing typed contract errors. |
 | `@lib//base:status`   | Allocation-free, domain-extensible status/error codes.       |
 | `@lib//base:math`     | Eigen matrix/vector aliases.                                 |
-| `@lib//base:time`     | `SimClock` simulation clock, `Duration`, `TimePoint`.        |
 | `@lib//base:testing`  | Catch2 main plus a summary reporter; depend on it from `cc_test`. |
 
 ## Build

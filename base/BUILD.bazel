@@ -92,20 +92,3 @@ cc_test(
         ":testing",
     ],
 )
-
-cc_library(
-    name = "time",
-    hdrs = ["time.hpp"],
-    copts = COPTS,
-)
-
-cc_test(
-    name = "time_test",
-    size = "small",
-    srcs = ["time_test.cpp"],
-    copts = COPTS,
-    deps = [
-        ":testing",
-        ":time",
-    ],
-)
