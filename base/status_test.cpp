@@ -147,9 +147,13 @@ TEST_CASE("StatusCode") {
   }
 
   SECTION("ShouldRestoreStreamFlagsGivenOutputOperator") {
+    // Preconditions.
     std::ostringstream out;
+
+    // Under Test.
     out << StatusCode{1u, 2u, 3u} << ' ' << 255;
 
+    // Postconditions.
     REQUIRE(out.str().ends_with(" 255"));
   }
 }
@@ -510,6 +514,7 @@ constexpr auto StatusKindShouldCompareDifferent() -> bool {
 TEST_CASE("EnumStatusKindDomain") {
   // watch_kind goes through a virtual call, so these run at runtime.
   SECTION("ShouldHaveSameMessageAndCompareGivenWatchedKinds") {
+    // Postconditions.
     REQUIRE(StatusKindShouldHaveSameMessage());
     REQUIRE(StatusKindShouldCompareSame());
     REQUIRE(StatusKindShouldCompareDifferent());
@@ -526,9 +531,11 @@ TEST_CASE("EnumStatusKindDomain") {
 
 TEST_CASE("StatusEquivalence") {
   SECTION("ShouldBeEquivalentGivenStatusWithSameConditionDifferentIncident") {
+    // Under Test.
     Status first = raise(Quark::TOP);
     Status second = raise(Quark::TOP);
 
+    // Postconditions.
     REQUIRE(first.has_equivalent_condition_as(second));
     REQUIRE_FALSE(first.has_equivalent_condition_as(raise(Quark::CHARM)));
   }
@@ -594,6 +601,7 @@ TEST_CASE("StaticEnumStatusDomain") {
 
 TEST_CASE("ThreadLocalEnumStatusDomain") {
   SECTION("ShouldMatchKindGivenStatusRaisedOnAnotherThread") {
+    // Preconditions.
     // The domain's identity is shared; only its incident storage is per
     // thread.
     StatusKind watched = watch_thread_local(Quark::TOP);
@@ -601,6 +609,7 @@ TEST_CASE("ThreadLocalEnumStatusDomain") {
     bool same_condition_matches = false;
     bool other_condition_differs = false;
 
+    // Under Test.
     std::thread raiser{[&] {
       Status raised = raise_thread_local(Quark::TOP);
       same_condition_matches = raised.kind() == watched;
@@ -608,6 +617,7 @@ TEST_CASE("ThreadLocalEnumStatusDomain") {
     }};
     raiser.join();
 
+    // Postconditions.
     REQUIRE(same_condition_matches);
     REQUIRE(other_condition_differs);
   }
@@ -683,6 +693,7 @@ TEST_CASE("StaticEnumStatusDomainIncidentCount") {
 
 TEST_CASE("StatusKindDefault") {
   SECTION("ShouldNotEqualAnyRaisedStatusGivenDefaultKind") {
+    // Postconditions.
     REQUIRE(StatusKind{} != raise(Quark::TOP).kind());
   }
 
