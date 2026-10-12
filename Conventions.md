@@ -18,10 +18,12 @@ Call sites write `Out(x)`, `InOut(x)` or `Depend(x)` and let class template
 argument deduction find the type. Only parameters name it.
 
 **lib's vocabulary types are written without `lib::`.** They are `Out`,
-`InOut`, `Depend` and `Status`, and a project has only one of each. Each
-project declares them in its own namespace with `using lib::Out;` and the
-rest, in one header: simon's `core/argument.hpp`, iopia's
-`iopia/vocabulary.hpp`, volcano's `engine/base.hpp`.
+`InOut`, `Depend` and `Status`, and each has only one meaning in a project.
+Every project declares them in its own namespace, in a `core` package with
+two headers: `core/argument.hpp` includes lib's `base/core.hpp` and declares
+`using lib::Out;`, `using lib::InOut;` and `using lib::Depend;`, and
+`core/status.hpp` includes lib's `base/status.hpp` and declares
+`using lib::Status;`.
 
 **Parameters read inputs first, then what the callee writes or keeps, then what
 it only writes.** The order is `(In..., InOut..., Out)`, with `Depend` among the
