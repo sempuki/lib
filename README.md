@@ -3,6 +3,9 @@
 Core C++ building blocks shared by [volcano](https://github.com/sempuki/volcano)
 and [simon](https://github.com/sempuki/simon). Everything lives in `namespace lib`.
 
+[Conventions.md](Conventions.md) holds the style every project that uses lib
+follows: arguments, errors, names, classes, files, comments, prose and tests.
+
 | Target               | What                                                         |
 | -------------------- | ------------------------------------------------------------ |
 | `@lib//base:core`     | Class-declaration macros, contract checks, `Out`/`InOut`/`Depend` argument wrappers, `narrow_cast`, `Overloaded`, `stable_hash`. |
