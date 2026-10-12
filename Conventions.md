@@ -17,9 +17,11 @@ These conventions hold in every project that uses lib. A project's own
 Call sites write `Out(x)`, `InOut(x)` or `Depend(x)` and let class template
 argument deduction find the type. Only parameters name it.
 
-**The wrappers are written without `lib::`.** Each project declares them in
-its own namespace with `using lib::Out;` and the rest, in one header (simon's
-`core/argument.hpp`, iopia's `iopia/argument.hpp`).
+**lib's vocabulary types are written without `lib::`.** They are `Out`,
+`InOut`, `Depend` and `Status`, and a project has only one of each. Each
+project declares them in its own namespace with `using lib::Out;` and the
+rest, in one header: simon's `core/argument.hpp`, iopia's
+`iopia/vocabulary.hpp`, volcano's `engine/base.hpp`.
 
 **Parameters read inputs first, then what the callee writes or keeps, then what
 it only writes.** The order is `(In..., InOut..., Out)`, with `Depend` among the
@@ -37,7 +39,7 @@ large or never move.
 
 ## Errors
 
-**Errors are `std::expected<T, lib::Status>`, propagated with lib's macros**
+**Errors are `std::expected<T, Status>`, propagated with lib's macros**
 in place of an `if` per call.
 
 ```cpp
@@ -58,7 +60,7 @@ Compare a status with a condition through `lib::watch(Condition::X)`.
 
 **A type that can fail to construct has a factory.** A constructor can't
 return an error, so `Type::make(...)` returns `std::expected<Type,
-lib::Status>`.
+Status>`.
 
 **Contract checks use `CHECK_PRECONDITION`, `CHECK_POSTCONDITION`,
 `CHECK_INVARIANT` and `CHECK_UNREACHABLE`.**
@@ -115,6 +117,22 @@ until the code converts it.
 **A class's copy and move members sit together,** the `DECLARE_COPY_*` and
 `DECLARE_MOVE_*` macros or the hand-written constructors and assignments, in
 one block with no blank line between them.
+
+**Fields are ordered by lifetime, then meaning, then cache heat, then
+descending size.** A field that must outlive or be destroyed after another
+comes first. Then the fields that say what the object is come before the
+ones that record its progress, fields used together sit together, and
+larger fields come before smaller ones, which also packs them.
+
+```cpp
+class ReadOperation final : public Operation {
+  Loop* loop_ = nullptr;              // what it depends on
+  ReadRequest request_;               // the work
+  std::coroutine_handle<> awaiting_;  // who to resume
+  std::int32_t result_ = 0;           // written at completion
+  bool submitted_ = false;
+};
+```
 
 **Every pointer is initialized,** `Type* pointer = nullptr;`, even when a
 constructor always sets it.
