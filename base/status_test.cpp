@@ -1,8 +1,12 @@
 #include "base/status.hpp"
 
 #include <functional>
+#include <optional>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include "base/testing.hpp"
 
@@ -138,12 +142,81 @@ TEST_CASE("StatusCode") {
     REQUIRE(!code.is_same_code(other));
   }
 
+  SECTION("ShouldCopyOnlyDomainBitsGivenOtherCode") {
+    // Under Test.
+    code.set_domain_bits(StatusCode{7u, 8u, 9u});
+
+    // Postconditions.
+    REQUIRE(code.domain_bits() == 7u);
+    REQUIRE(code.condition_bits() == 5u);
+    REQUIRE(code.incident_bits() == 4u);
+  }
+
+  SECTION("ShouldCopyOnlyConditionBitsGivenOtherCode") {
+    // Under Test.
+    code.set_condition_bits(StatusCode{7u, 8u, 9u});
+
+    // Postconditions.
+    REQUIRE(code.domain_bits() == 6u);
+    REQUIRE(code.condition_bits() == 8u);
+    REQUIRE(code.incident_bits() == 4u);
+  }
+
+  SECTION("ShouldCopyOnlyIncidentBitsGivenOtherCode") {
+    // Under Test.
+    code.set_incident_bits(StatusCode{7u, 8u, 9u});
+
+    // Postconditions.
+    REQUIRE(code.domain_bits() == 6u);
+    REQUIRE(code.condition_bits() == 5u);
+    REQUIRE(code.incident_bits() == 9u);
+  }
+
+  SECTION("ShouldKeepEveryBitGivenSixteenBitFields") {
+    // Under Test.
+    StatusCode widest{0xFFFFu, 0xFFFFu, 0xFFFFu};
+
+    // Postconditions.
+    REQUIRE(widest.domain_bits() == 0xFFFFu);
+    REQUIRE(widest.condition_bits() == 0xFFFFu);
+    REQUIRE(widest.incident_bits() == 0xFFFFu);
+  }
+
+  SECTION("ShouldThrowGivenFieldWiderThanSixteenBits") {
+    // Preconditions.
+    constexpr std::size_t too_wide = std::size_t{1} << 16;
+
+    // Postconditions.
+    REQUIRE_THROWS_AS((StatusCode{too_wide, 0u, 0u}), std::logic_error);
+    REQUIRE_THROWS_AS((StatusCode{0u, too_wide, 0u}), std::logic_error);
+    REQUIRE_THROWS_AS((StatusCode{0u, 0u, too_wide}), std::logic_error);
+  }
+
+  SECTION("ShouldOrderByDomainThenConditionThenIncident") {
+    // Postconditions.
+    REQUIRE(StatusCode{0u, 0xFFFFu, 0xFFFFu} < StatusCode{1u, 0u, 0u});
+    REQUIRE(StatusCode{1u, 0u, 0xFFFFu} < StatusCode{1u, 1u, 0u});
+    REQUIRE(StatusCode{1u, 1u, 0u} < StatusCode{1u, 1u, 1u});
+    REQUIRE_FALSE(StatusCode{1u, 1u, 1u} < StatusCode{1u, 1u, 1u});
+  }
+
   SECTION("ShouldBeConstexprBits") {
     // Under Test.
     constexpr bool pass = StatusCodeShouldHaveSameBits();
 
     // Postconditions.
     REQUIRE(pass);
+  }
+
+  SECTION("ShouldWriteHexGivenOutputOperator") {
+    // Preconditions.
+    std::ostringstream out;
+
+    // Under Test.
+    out << StatusCode{1u, 2u, 3u};
+
+    // Postconditions.
+    REQUIRE(out.str() == "100020003");
   }
 
   SECTION("ShouldRestoreStreamFlagsGivenOutputOperator") {
@@ -211,7 +284,41 @@ class QuarkKindDomain final
   using BaseType::BaseType;
 };
 
+// Declares UP and DOWN equivalent conditions.
+class EquivalentQuarkDomain final
+    : public EnumStatusDomain<Quark, QUARK_CONDITION_COUNT> {
+  using BaseType = EnumStatusDomain<Quark, QUARK_CONDITION_COUNT>;
+
+ public:
+  using BaseType::BaseType;
+
+  auto has_equivalent_condition_of(StatusBase const* lhs,
+                                   StatusBase const* rhs) const noexcept
+      -> bool override {
+    return is_up_or_down(condition_code_of(lhs)) &&
+           is_up_or_down(condition_code_of(rhs));
+  }
+
+  auto has_equivalent_condition_of(StatusBase const* lhs,
+                                   StatusKind const* rhs) const noexcept
+      -> bool override {
+    return is_up_or_down(condition_code_of(lhs)) &&
+           is_up_or_down(condition_code_of(rhs));
+  }
+
+ private:
+  static auto is_up_or_down(std::size_t condition_code) noexcept -> bool {
+    return condition_code == static_cast<std::size_t>(Quark::UP) ||
+           condition_code == static_cast<std::size_t>(Quark::DOWN);
+  }
+};
+
+constexpr std::size_t SMALL_INCIDENT_COUNT = 4;
+
 QuarkStatusDomain domain{42u, "quark"};
+EquivalentQuarkDomain equivalent_domain{43u, "equivalent"};
+EnumStatusDomain<Quark, QUARK_CONDITION_COUNT, SMALL_INCIDENT_COUNT>
+    small_domain{44u, "small"};
 std::source_location location0 = std::source_location::current();
 std::source_location location1 = std::source_location::current();
 std::string message0 = "mark";
@@ -264,6 +371,71 @@ TEST_CASE("EnumStatusDomain") {
     // Postconditions.
     REQUIRE(domain.location_of_incident > 0u);
     REQUIRE(location.line() > 0u);
+  }
+
+  SECTION("ShouldHaveNameGivenConstruction") {
+    // Postconditions.
+    REQUIRE(domain.name() == "quark");
+    REQUIRE(small_domain.name() == "small");
+  }
+
+  SECTION("ShouldEncodeDomainAndConditionGivenRaiseStatus") {
+    // Under Test.
+    Status status = domain.raise_status(Quark::DOWN);
+
+    // Postconditions.
+    REQUIRE(domain_code_of(&status) == 42u);
+    REQUIRE(condition_code_of(&status) ==
+            static_cast<std::size_t>(Quark::DOWN));
+    REQUIRE(incident_code_of(&status) < DEFAULT_INCIDENT_COUNT);
+  }
+
+  SECTION("ShouldGiveEachRaiseItsOwnIncidentGivenSameCondition") {
+    // Under Test.
+    Status first = domain.raise_status(Quark::UP);
+    Status second = domain.raise_status(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(incident_code_of(&first) != incident_code_of(&second));
+    REQUIRE(first != second);
+  }
+
+  SECTION("ShouldReuseIncidentSlotsGivenMoreRaisesThanIncidentCountMax") {
+    // Preconditions.
+    std::vector<Status> raised;
+    for (std::size_t i = 0; i <= SMALL_INCIDENT_COUNT; ++i) {
+      raised.push_back(small_domain.raise_status(Quark::UP, std::to_string(i)));
+    }
+
+    // Under Test.
+    Status& first = raised.front();
+    Status& wrapped = raised.back();
+
+    // Postconditions.
+    // The last raise took the first raise's slot, so the first Status now
+    // reads the last message and compares equal to the last Status.
+    REQUIRE(incident_code_of(&wrapped) == incident_code_of(&first));
+    REQUIRE(first.message() == std::to_string(SMALL_INCIDENT_COUNT));
+    REQUIRE(wrapped == first);
+    REQUIRE(raised[1].message() == "1");
+  }
+
+  SECTION("ShouldOverwriteOnlyTheOldestSlotGivenOneRaiseOverCapacity") {
+    // Preconditions.
+    std::vector<Status> raised;
+    for (std::size_t i = 0; i < SMALL_INCIDENT_COUNT; ++i) {
+      raised.push_back(small_domain.raise_status(Quark::UP, std::to_string(i)));
+    }
+
+    // Under Test.
+    Status extra = small_domain.raise_status(Quark::UP, "extra");
+
+    // Postconditions.
+    REQUIRE(raised[0].message() == "extra");
+    for (std::size_t i = 1; i < SMALL_INCIDENT_COUNT; ++i) {
+      REQUIRE(raised[i].message() == std::to_string(i));
+    }
+    REQUIRE(extra.message() == "extra");
   }
 }
 
@@ -332,6 +504,50 @@ TEST_CASE("Status") {
     REQUIRE(platform_error != platform_error1);
   }
 
+  SECTION("ShouldHaveEmptyMessageAndLocationGivenRaiseStatusWithoutThem") {
+    // Under Test.
+    Status bare = domain.raise_status(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(bare.message().empty());
+    REQUIRE(bare.location().line() == 0u);
+    REQUIRE(bare.platform_error() == 0);
+  }
+
+  SECTION("ShouldHaveZeroPlatformErrorGivenRaiseStatus") {
+    // Postconditions.
+    REQUIRE(status.platform_error() == 0);
+  }
+
+  SECTION("ShouldHaveEmptyLocationGivenRaiseError") {
+    // Under Test.
+    Status error = domain.raise_error(Quark::UP, platform_error1, message1);
+
+    // Postconditions.
+    REQUIRE(error.platform_error() == platform_error1);
+    REQUIRE(error.message() == message1);
+    REQUIRE(error.location().line() == 0u);
+  }
+
+  SECTION("ShouldOrderStrictlyGivenDistinctIncidents") {
+    // Under Test.
+    Status other = domain.raise_status(Quark::UP);
+
+    // Postconditions.
+    REQUIRE_FALSE(status < status);
+    REQUIRE((status < other) != (other < status));
+  }
+
+  SECTION("ShouldOrderByConditionGivenSameDomain") {
+    // Preconditions.
+    Status up = small_domain.raise_status(Quark::UP);
+    Status charm = small_domain.raise_status(Quark::CHARM);
+
+    // Postconditions.
+    REQUIRE(up < charm);
+    REQUIRE_FALSE(charm < up);
+  }
+
   // Under Test.
   StatusDetached detached = status.detach_copy();
 
@@ -348,6 +564,14 @@ TEST_CASE("Status") {
   SECTION("ShouldHaveSamePlatformErrorAsDetachedCopy") {
     // Postconditions.
     REQUIRE(detached.platform_error() == status.platform_error());
+  }
+
+  SECTION("ShouldBeEqualToDetachedCopy") {
+    // Postconditions.
+    REQUIRE(status == detached);
+    REQUIRE(detached == status);
+    REQUIRE(detached == status.kind());
+    REQUIRE(status.kind() == detached);
   }
 
   SECTION("ShouldBeEqualToStatusWithSameIncident") {
@@ -431,6 +655,17 @@ TEST_CASE("Status") {
     REQUIRE(!other.has_equivalent_condition_as(status.kind()));
   }
 
+  SECTION("ShouldNotBeEquivalentToStatusOfOtherDomainWithSameCondition") {
+    // Under Test.
+    Status other = small_domain.raise_status(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(status != other);
+    REQUIRE(status.kind() != other.kind());
+    REQUIRE_FALSE(status.has_equivalent_condition_as(other));
+    REQUIRE_FALSE(status.has_equivalent_condition_as(other.kind()));
+  }
+
   SECTION("ShouldBeOutStreamable") {
     // Preconditions.
     std::stringstream ss;
@@ -441,6 +676,93 @@ TEST_CASE("Status") {
     // Postconditions.
     REQUIRE(ss.str().size() > 0u);
     REQUIRE(ss.str() == status.message());
+  }
+
+  SECTION("ShouldStreamNothingGivenEmptyMessage") {
+    // Preconditions.
+    std::stringstream ss;
+
+    // Under Test.
+    ss << domain.raise_status(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(ss.str().empty());
+  }
+}
+
+TEST_CASE("StatusDetached") {
+  SECTION("ShouldKeepMessageGivenIncidentSlotOverwritten") {
+    // Preconditions.
+    Status status = small_domain.raise_status(Quark::UP, message0);
+    StatusDetached detached = status.detach_copy();
+
+    // Under Test.
+    for (std::size_t i = 0; i < SMALL_INCIDENT_COUNT; ++i) {
+      auto _ = small_domain.raise_status(Quark::UP, message1);
+    }
+
+    // Postconditions.
+    REQUIRE(detached.message() == message0);
+    REQUIRE(status.message() == message1);
+  }
+
+  SECTION("ShouldKeepLocationGivenIncidentSlotOverwritten") {
+    // Preconditions.
+    Status status = small_domain.raise_status_here(Quark::UP, {}, location0);
+    StatusDetached detached = status.detach_copy();
+
+    // Under Test.
+    for (std::size_t i = 0; i < SMALL_INCIDENT_COUNT; ++i) {
+      auto _ = small_domain.raise_status_here(Quark::UP, {}, location1);
+    }
+
+    // Postconditions.
+    REQUIRE(detached.location().line() == location0.line());
+    REQUIRE(status.location().line() == location1.line());
+  }
+
+  SECTION("ShouldKeepPlatformErrorGivenIncidentSlotOverwritten") {
+    // Preconditions.
+    Status status = small_domain.raise_error(Quark::UP, platform_error0);
+    StatusDetached detached = status.detach_copy();
+
+    // Under Test.
+    for (std::size_t i = 0; i < SMALL_INCIDENT_COUNT; ++i) {
+      auto _ = small_domain.raise_error(Quark::UP, platform_error1);
+    }
+
+    // Postconditions.
+    REQUIRE(detached.platform_error() == platform_error0);
+    REQUIRE(status.platform_error() == platform_error1);
+  }
+
+  SECTION("ShouldKeepMessageGivenRaisingThreadEnded") {
+    // Preconditions.
+    std::optional<StatusDetached> detached;
+
+    // Under Test.
+    std::thread raiser{[&] {
+      detached = raise_thread_local(Quark::TOP, message0).detach_copy();
+    }};
+    raiser.join();
+
+    // Postconditions.
+    REQUIRE(detached.has_value());
+    REQUIRE(detached->message() == message0);
+    REQUIRE(*detached == watch_thread_local(Quark::TOP));
+  }
+
+  SECTION("ShouldBeOutStreamable") {
+    // Preconditions.
+    std::stringstream ss;
+    StatusDetached detached =
+        domain.raise_status(Quark::UP, message0).detach_copy();
+
+    // Under Test.
+    ss << detached;
+
+    // Postconditions.
+    REQUIRE(ss.str() == message0);
   }
 }
 
@@ -479,6 +801,43 @@ TEST_CASE("StatusKind") {
   SECTION("ShouldNotBeEquivalentToIncidentOfDifferentCondition") {
     // Postconditions.
     REQUIRE(!status.has_equivalent_condition_as(down));
+  }
+
+  SECTION("ShouldOrderByConditionGivenSameDomain") {
+    // Postconditions.
+    REQUIRE(up < down);
+    REQUIRE_FALSE(down < up);
+    REQUIRE_FALSE(up < up);
+  }
+
+  SECTION("ShouldEncodeDomainAndCondition") {
+    // Postconditions.
+    REQUIRE(domain_code_of(&up) == 42u);
+    REQUIRE(condition_code_of(&up) == static_cast<std::size_t>(Quark::UP));
+    REQUIRE(condition_code_of(&down) == static_cast<std::size_t>(Quark::DOWN));
+  }
+
+  SECTION("ShouldNotEqualKindOfOtherDomainGivenSameCondition") {
+    // Under Test.
+    StatusKind other = small_domain.watch_kind(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(up != other);
+    REQUIRE(status != other);
+  }
+
+  SECTION("ShouldEqualKindOfOtherDomainObjectGivenSameDomainCode") {
+    // Preconditions.
+    // Identity is the domain code, not the object, which is what lets every
+    // thread's thread_local domain raise comparable statuses.
+    QuarkKindDomain same_code{42u, "same"};
+
+    // Under Test.
+    StatusKind other = same_code.watch_kind(Quark::UP);
+
+    // Postconditions.
+    REQUIRE(up == other);
+    REQUIRE(status == other);
   }
 
   SECTION("ShouldBeOutStreamable") {
@@ -539,9 +898,62 @@ TEST_CASE("StatusEquivalence") {
     REQUIRE(first.has_equivalent_condition_as(second));
     REQUIRE_FALSE(first.has_equivalent_condition_as(raise(Quark::CHARM)));
   }
+
+  SECTION("ShouldBeEquivalentGivenDomainDeclaresConditionsEquivalent") {
+    // Preconditions.
+    Status up = equivalent_domain.raise_status(Quark::UP);
+    Status down = equivalent_domain.raise_status(Quark::DOWN);
+
+    // Postconditions.
+    REQUIRE(up.has_equivalent_condition_as(down));
+    REQUIRE(down.has_equivalent_condition_as(up));
+    REQUIRE(up.has_equivalent_condition_as(down.kind()));
+    REQUIRE(up.has_equivalent_condition_as(
+        equivalent_domain.watch_kind(Quark::DOWN)));
+  }
+
+  SECTION("ShouldStayUnequalGivenDomainDeclaresConditionsEquivalent") {
+    // Preconditions.
+    Status up = equivalent_domain.raise_status(Quark::UP);
+    Status down = equivalent_domain.raise_status(Quark::DOWN);
+
+    // Postconditions.
+    REQUIRE(up != down);
+    REQUIRE(up.kind() != down.kind());
+    REQUIRE(up != down.kind());
+  }
+
+  SECTION("ShouldNotBeEquivalentGivenConditionOutsideDomainRule") {
+    // Preconditions.
+    Status up = equivalent_domain.raise_status(Quark::UP);
+    Status top = equivalent_domain.raise_status(Quark::TOP);
+
+    // Postconditions.
+    REQUIRE_FALSE(up.has_equivalent_condition_as(top));
+    REQUIRE_FALSE(top.has_equivalent_condition_as(up));
+    REQUIRE_FALSE(up.has_equivalent_condition_as(top.kind()));
+  }
 }
 
 TEST_CASE("StaticEnumStatusDomain") {
+  SECTION("ShouldReturnOneDomainGivenSameTemplateArguments") {
+    // Under Test.
+    auto& first = static_enum_status_domain<Quark, QUARK_CONDITION_COUNT>();
+    auto& second = static_enum_status_domain<Quark, QUARK_CONDITION_COUNT>();
+
+    // Postconditions.
+    REQUIRE(&first == &second);
+    REQUIRE(first.name().starts_with("static_enum_status_domain_"));
+  }
+
+  SECTION("ShouldReturnAnotherDomainGivenDifferentIncidentCountMax") {
+    // Under Test.
+    auto& other = static_enum_status_domain<Quark, QUARK_CONDITION_COUNT, 4>();
+
+    // Postconditions.
+    REQUIRE(other.watch_kind(Quark::TOP) != watch(Quark::TOP));
+  }
+
   SECTION("ShouldRaiseStatusFromDifferentDomain") {
     // Preconditions.
     Status other = domain.raise_status(Quark::TOP);
@@ -631,6 +1043,21 @@ TEST_CASE("ThreadLocalEnumStatusDomain") {
 
     // Postconditions.
     REQUIRE(status.kind() != other.kind());
+  }
+
+  SECTION("ShouldKeepThisThreadsMessageGivenRaiseOnAnotherThread") {
+    // Preconditions.
+    Status status = raise_thread_local(Quark::TOP, message0);
+
+    // Under Test.
+    // Each thread's storage holds one incident, so a shared one would
+    // overwrite this thread's message.
+    std::thread raiser{
+        [] { auto _ = raise_thread_local(Quark::TOP, message1); }};
+    raiser.join();
+
+    // Postconditions.
+    REQUIRE(status.message() == message0);
   }
 
   SECTION("ShouldRaiseMultipleStatusWithSingleMessagePerThread") {

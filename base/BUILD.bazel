@@ -55,6 +55,23 @@ cc_test(
 )
 
 cc_library(
+    name = "expected",
+    hdrs = ["expected.hpp"],
+    copts = COPTS,
+)
+
+cc_test(
+    name = "expected_test",
+    size = "small",
+    srcs = ["expected_test.cpp"],
+    copts = COPTS,
+    deps = [
+        ":expected",
+        ":testing",
+    ],
+)
+
+cc_library(
     name = "status",
     hdrs = ["status.hpp"],
     copts = COPTS,

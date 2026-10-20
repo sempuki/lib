@@ -10,6 +10,7 @@ follows: arguments, errors, names, classes, files, comments, prose and tests.
 | -------------------- | ------------------------------------------------------------ |
 | `@lib//base:core`     | Class-declaration macros, contract checks, `Out`/`InOut`/`Depend` argument wrappers, `narrow_cast`, `Overloaded`, `stable_hash`. |
 | `@lib//base:contract` | `EXPECT`/`ENSURE`/`ASSERT` macros throwing typed contract errors. |
+| `@lib//base:expected` | `PROPAGATE_UNEXPECTED` and `PROPAGATE_UNEXPECTED_OR_ASSIGN`, which return a `std::expected`'s error from the enclosing function. |
 | `@lib//base:status`   | Allocation-free, domain-extensible status/error codes.       |
 | `@lib//base:math`     | Eigen matrix/vector aliases.                                 |
 | `@lib//base:testing`  | Catch2 main plus a summary reporter; depend on it from `cc_test`. |

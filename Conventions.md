@@ -41,20 +41,21 @@ large or never move.
 
 ## Errors
 
-**Errors are `std::expected<T, Status>`, propagated with lib's macros**
-in place of an `if` per call.
+**Errors are `std::expected<T, Status>`, propagated with the macros in
+lib's `base/expected.hpp`** in place of an `if` per call.
 
 ```cpp
-RETURN_IF_UNEXPECTED(build_world(scenario, Out(world)));
-RETURN_OR_ASSIGN_TO(asset, build_scenario(scenario, InOut(world)));
+PROPAGATE_UNEXPECTED(build_world(scenario, Out(world)));
+PROPAGATE_UNEXPECTED_OR_ASSIGN(asset, build_scenario(scenario, InOut(world)));
 ```
 
-`RETURN_IF_UNEXPECTED` returns the error, if any, from the enclosing function.
-`RETURN_OR_ASSIGN_TO` does the same and otherwise moves the value into an
-existing variable or a new declaration (`Entity asset`). The enclosing function
-must return a `std::expected` whose error type the error converts to.
-`RETURN_OR_ASSIGN_TO` expands to several statements, so it goes only where a
-statement can, at most once per line.
+`PROPAGATE_UNEXPECTED` returns the error, if any, from the enclosing function.
+`PROPAGATE_UNEXPECTED_OR_ASSIGN` does the same and otherwise moves the value
+into an existing variable or a new declaration (`Entity asset`). The enclosing
+function must return a `std::expected` whose error type the error converts to.
+`PROPAGATE_UNEXPECTED_OR_ASSIGN` expands to several statements, so it goes only
+where a statement can, at most once per line. A target that uses them depends
+on `@lib//base:expected`.
 
 **A project's errors form a status domain,** an `enum class` of conditions
 with their messages in a `lib::EnumStatusKindConditionMixin` specialization.
